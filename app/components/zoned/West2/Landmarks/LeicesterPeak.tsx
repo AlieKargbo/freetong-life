@@ -10,7 +10,7 @@ import { buildMountain } from './mountain';
 import { Inst, Trees, scatterPoints, type Item } from './Scatter';
 
 type V3 = [number, number, number];
-type Props = { position: [number, number, number] };
+type Props = { position: [number, number, number]; nameOverride?: string };
 
 // export const info: BuildingInfo = {
 //   id: 'leicester-peak',
@@ -149,7 +149,7 @@ function Antenna({ position }: { position: V3 }) {
 }
 
 // Leicester Peak: a forested ridge with bare rock at the top, a switchback road and the radio mast.
-export default function LeicesterPeak({ position }: Props) {
+export default function LeicesterPeak({ position, nameOverride }: Props) {
   const m = useMemo(
     () =>
       buildMountain({
@@ -210,7 +210,7 @@ export default function LeicesterPeak({ position }: Props) {
       <BuildingPin
         emoji="⛰️"
         label="Leicester Peak"
-        nameOverride="Leicester Peak"
+        nameOverride={nameOverride ?? "Leicester Peak"}
         height={LEICESTER_HEIGHT}
       />
     </group>

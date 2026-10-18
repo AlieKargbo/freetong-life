@@ -30,9 +30,14 @@ export default function BuildingPopup() {
 
   useEffect(() => {
     if (!info) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && game.closePopup();
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
   }, [info]);
 
   if (!info) return null;
@@ -57,21 +62,26 @@ export default function BuildingPopup() {
 
   return (
     <div
-      className="absolute inset-0 z-[200] flex items-center justify-center bg-black/20 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-slate-950/45 px-3 py-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm"
       onClick={() => game.closePopup()}
+      role="presentation"
     >
       <div
-        className="max-h-[88%] w-full max-w-175 overflow-y-auto rounded-[28px] bg-white p-5 shadow-2xl"
+        className="max-h-[min(88dvh,48rem)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-[28px] bg-white p-4 shadow-2xl sm:p-6"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="building-popup-title"
       >
         {/* Header */}
         <div className="flex items-start gap-3">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-2xl">{info.emoji}</span>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-2xl font-extrabold tracking-tight text-slate-800">{info.name}</h2>
+            <h2 id="building-popup-title" className="truncate text-2xl font-extrabold tracking-tight text-slate-800">{info.name}</h2>
             <p className="text-slate-500">{info.area}</p>
           </div>
           <button
+            type="button"
             onClick={() => game.closePopup()}
             aria-label="Close"
             className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100"
@@ -80,7 +90,7 @@ export default function BuildingPopup() {
           </button>
         </div>
 
-        <button onClick={share} className="mt-2 text-sm font-semibold text-blue-500 hover:underline">
+        <button type="button" onClick={share} className="mt-2 text-sm font-semibold text-blue-500 hover:underline">
           {copied ? '✔ Link copied' : `🔗 Share a link to ${info.name}`}
         </button>
         <p className="mt-1 text-sm text-slate-500">{info.tagline}</p>
@@ -96,7 +106,7 @@ export default function BuildingPopup() {
         </div>
 
         {info.shops && (
-          <button className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-purple-100 px-4 py-4 text-left font-bold text-slate-800">
+          <button type="button" className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-purple-100 px-4 py-4 text-left font-bold text-slate-800">
             <span className="text-xl">🛍️</span>
             <span className="flex-1">Player shops here</span>
             <span className="text-slate-400">›</span>
@@ -107,6 +117,7 @@ export default function BuildingPopup() {
         <div className="mt-4 grid grid-cols-5 gap-2">
           {RIDES.map((r) => (
             <button
+              type="button"
               key={r.id}
               onClick={() => setRideChoice({ buildingId: info.id, ride: r.id })}
               className={`relative flex flex-col items-center rounded-2xl px-1 py-3 text-sm transition-colors ${
@@ -125,6 +136,7 @@ export default function BuildingPopup() {
         {rush && <p className="mt-2 text-center text-sm font-medium text-amber-700">⏰ Rush hour: Cab fares are up</p>}
 
         <button
+          type="button"
           disabled={!canAfford}
           onClick={() => game.travelTo(info, fare(chosen), chosen.label)}
           className="mt-4 w-full rounded-full bg-emerald-500 py-4 text-xl font-bold text-white shadow transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-slate-300"

@@ -24,7 +24,7 @@ export const SKILL_INFO: Record<SkillName, {
   fitness: { label: 'Fitness', emoji: '💪', source: 'Dance at a stage', unlock: 'Level 2: dancing uses 5 less energy.' },
   music: { label: 'Music', emoji: '🎵', source: 'Dance at a stage', unlock: 'Level 2: dancing restores 8 extra fun.' },
   social: { label: 'Social', emoji: '🗣️', source: 'Chat with another player', unlock: 'Level 2: conversations restore 8 extra social.' },
-  hustle: { label: 'Hustle', emoji: '💼', source: 'Complete cafe shift tasks', unlock: 'Level 2: earn 10% more from cafe shifts.' },
+  hustle: { label: 'Hustle', emoji: '💼', source: 'Complete career shift tasks', unlock: 'Level 2: earn 10% more from career shifts.' },
 };
 
 export const ACTION_SKILL_XP: Partial<Record<NeedAction, Partial<SkillXp>>> = {

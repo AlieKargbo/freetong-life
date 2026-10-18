@@ -93,7 +93,7 @@ export default function Murrytong() {
                 <meshStandardMaterial color={zone.color} />
             </mesh>
 
-            <GrammarSchool position={[-43, 0, 2]} />
+            <GrammarSchool position={[-43, 0, 2]} nameOverride="Sierra Leone Grammar School" />
             {/* Road through the middle of the land mass */}
             <mesh position={[cx, 0.03, roadZ]} receiveShadow>
                 <boxGeometry args={[width, 0.06, ROAD_DEPTH]} />
@@ -312,7 +312,7 @@ export default function Murrytong() {
                 ))}
             </group>
 
-            <SharedMilitaryHQ position={[-30, 0, 2]} />
+            <SharedMilitaryHQ position={[-30, 0, 2]} nameOverride="Cockerill Barracks" />
 
 
             {/* Murrytong label */}

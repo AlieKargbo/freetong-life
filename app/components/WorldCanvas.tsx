@@ -26,7 +26,6 @@ import {
 } from '@/app/components/zoned/BuildingImports';
 
 
-import { BuildingNameScope } from './utils/BuildingNameScope';
 import Hud from './Hud';
 import InteriorScene from './utils/InteriorScene';
 import BuildingPopup from './utils/BuildingPopup';
@@ -34,11 +33,11 @@ import BuildingPopup from './utils/BuildingPopup';
 import { AUTH_STORAGE_KEY, game, useGame } from './utils/Store';
 import NeedSimulation from './utils/NeedSimulation';
 import GamePersistence from './utils/GamePersistence';
+import useGameClock from './utils/useGameClock';
 import NeedActivityStatus from './utils/NeedActivityStatus';
 import TravelTransition from './utils/TravelTransition';
 import { calculateMood } from '@/app/Game/needs';
 import { PLAYER_HOME_INFO } from './zoned/Interior/playerHomeInfo';
-import { getGameClock } from '@/app/Game/clock';
 
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import WelcomeTour from './zoned/Interior/WelcomeTour';
@@ -58,6 +57,8 @@ import WelcomeTour from './zoned/Interior/WelcomeTour';
 // Camera position: [3.75, 37.5, 26.25], FOV: 38, Near: 1, Far: 700
 const CAMERA_POSITION: [number, number, number] = [3.75, 37.5, 26.25];
 const TARGET: [number, number, number] = [3.75, 0, 0];
+// Match the map's maximum OrbitControls distance for the fixed public overview.
+const PUBLIC_CAMERA_POSITION: [number, number, number] = [3.75, 65.54, 45.88];
 const HOUSE_CAMERA_POSITION: [number, number, number] = [0, 9, 15];
 const HOUSE_TARGET: [number, number, number] = [0, 1, 0];
 
@@ -65,7 +66,84 @@ const HOUSE_TARGET: [number, number, number] = [0, 1, 0];
 const TILT = Math.atan2(CAMERA_POSITION[2] - TARGET[2], CAMERA_POSITION[1] - TARGET[1]);
 const ROAD_WIDTH = 1.2;
 
-function SceneCamera({ interior }: { interior: { id: string } | null }) {
+type StreetLampLocation = { position: [number, number, number]; side: 'x' | 'z'; sideSign: -1 | 1 };
+
+function lampsAlongX(startX: number, endX: number, roadZ: number, count: number): StreetLampLocation[] {
+    return Array.from({ length: count }, (_, index) => ({
+        position: [startX + ((index + 1) / (count + 1)) * (endX - startX), 0, roadZ + (index % 2 === 0 ? -1 : 1) * 1.25] as [number, number, number],
+        side: 'z' as const,
+        sideSign: (index % 2 === 0 ? -1 : 1) as -1 | 1,
+    }));
+}
+
+function lampsAlongZ(roadX: number, startZ: number, endZ: number, count: number): StreetLampLocation[] {
+    return Array.from({ length: count }, (_, index) => ({
+        position: [roadX + (index % 2 === 0 ? -1 : 1) * 1.25, 0, startZ + ((index + 1) / (count + 1)) * (endZ - startZ)] as [number, number, number],
+        side: 'x' as const,
+        sideSign: (index % 2 === 0 ? -1 : 1) as -1 | 1,
+    }));
+}
+
+function StreetLamp({ position, side, sideSign, night }: StreetLampLocation & { night: number }) {
+    const armOffset: [number, number, number] = side === 'z'
+        ? [0, 2.6, -sideSign * 0.3]
+        : [-sideSign * 0.3, 2.6, 0];
+    const fixtureOffset: [number, number, number] = side === 'z'
+        ? [0, 2.56, -sideSign * 0.62]
+        : [-sideSign * 0.62, 2.56, 0];
+
+    return (
+        <group position={position}>
+            <mesh position={[0, 1.35, 0]} castShadow>
+                <cylinderGeometry args={[0.055, 0.09, 2.7, 8]} />
+                <meshStandardMaterial color="#334155" metalness={0.55} roughness={0.55} />
+            </mesh>
+            <mesh position={armOffset} castShadow>
+                <boxGeometry args={side === 'z' ? [0.08, 0.08, 0.7] : [0.7, 0.08, 0.08]} />
+                <meshStandardMaterial color="#334155" metalness={0.55} roughness={0.55} />
+            </mesh>
+            <mesh position={fixtureOffset}>
+                <boxGeometry args={[0.28, 0.12, 0.24]} />
+                <meshStandardMaterial color="#475569" metalness={0.45} roughness={0.5} />
+            </mesh>
+            <mesh position={[fixtureOffset[0], 2.48, fixtureOffset[2]]}>
+                <sphereGeometry args={[0.11, 10, 8]} />
+                <meshStandardMaterial
+                    color="#fff1bd"
+                    emissive="#ffbf5b"
+                    emissiveIntensity={night * 2.4}
+                    roughness={0.3}
+                />
+            </mesh>
+            <pointLight position={[fixtureOffset[0], 2.42, fixtureOffset[2]]} color="#ffd58a" intensity={night * 1.6} distance={8} decay={2} />
+        </group>
+    );
+}
+
+function StreetLights({ night }: { night: number }) {
+    const locations: StreetLampLocation[] = [
+        ...lampsAlongX(lumelyZone.c[0] - lumelyZone.size[0] / 2 + 3, lumelyZone.c[0] + lumelyZone.size[0] / 2 - 3, lumelyZone.c[1], 3),
+        ...lampsAlongX(lumely2Zone.c[0] - lumely2Zone.size[0] / 2 + 2, lumely2Zone.c[0] + lumely2Zone.size[0] / 2 - 2, lumely2Zone.c[1], 2),
+        ...lampsAlongX(wilksonZone.c[0] - wilksonZone.size[0] / 2 + 3, wilksonZone.c[0] + wilksonZone.size[0] / 2 - 3, wilksonZone.c[1] + wilksonZone.size[1] / 2 - ROAD_WIDTH / 2, 3),
+        ...lampsAlongX(congoZone.c[0] - congoZone.size[0] / 2 + 3, congoZone.c[0] + congoZone.size[0] / 2 - 3, congoZone.c[1], 2),
+        ...lampsAlongX(murrytongZone.c[0] - murrytongZone.size[0] / 2 + 2, murrytongZone.c[0] + murrytongZone.size[0] / 2 - 2, murrytongZone.c[1], 2),
+        ...lampsAlongX(godrichZone.c[0] - godrichZone.size[0] / 2 + 3, godrichZone.c[0] + godrichZone.size[0] / 2 - 3, godrichZone.c[1], 2),
+        ...lampsAlongX(63, 107, -10, 2),
+        ...lampsAlongZ(47, -27.6, 20, 2),
+        ...lampsAlongZ(regentZone.c[0], regentZone.c[1] - regentZone.size[1] / 2 + 3, ROUNDABOUT_POSITION[2] - 2, 2),
+        ...lampsAlongZ(regentZone.c[0], regentZone.c[1] - regentZone.size[1] / 2 - regentZone.size[1] + 2.4, regentZone.c[1] - regentZone.size[1] / 2 + 2.4, 2),
+    ];
+
+    return <group>{locations.map((location, index) => <StreetLamp key={index} {...location} night={night} />)}</group>;
+}
+
+function SceneCamera({
+    interior,
+    authenticated,
+}: {
+    interior: { id: string } | null;
+    authenticated: boolean;
+}) {
     const camera = useThree((state) => state.camera);
 
     useLayoutEffect(() => {
@@ -73,7 +151,7 @@ function SceneCamera({ interior }: { interior: { id: string } | null }) {
             camera.position.set(0, 14, 18);
             camera.lookAt(0, 0.6, 0);
         } else {
-            camera.position.set(...CAMERA_POSITION);
+            camera.position.set(...(authenticated ? CAMERA_POSITION : PUBLIC_CAMERA_POSITION));
             camera.lookAt(...TARGET);
         }
 
@@ -81,7 +159,7 @@ function SceneCamera({ interior }: { interior: { id: string } | null }) {
             camera.fov = interior ? 42 : 38;
             camera.updateProjectionMatrix();
         }
-    }, [camera, interior?.id]);
+    }, [camera, interior?.id, authenticated]);
 
     return null;
 }
@@ -290,16 +368,12 @@ export default function WorldCanvas() {
     const [requiresSaveHydration, setRequiresSaveHydration] = useState(false);
     const [saveReady, setSaveReady] = useState(false);
     const [showWelcomeTour, setShowWelcomeTour] = useState(false);
-    const [lightingTime, setLightingTime] = useState(() => getGameClock());
+    const [gameStarted, setGameStarted] = useState(false);
+    const lightingTime = useGameClock(gameStarted);
     const { hourOfDay, daylight, night } = lightingTime;
     const citySkyColor = new THREE.Color('#101a34').lerp(new THREE.Color('#22d3ee'), daylight);
     const oceanColor = new THREE.Color('#082f49').lerp(new THREE.Color('#38bdf8'), daylight);
     const handleSaveReady = useCallback(() => setSaveReady(true), []);
-
-    useEffect(() => {
-        const timer = window.setInterval(() => setLightingTime(getGameClock()), 1000);
-        return () => window.clearInterval(timer);
-    }, []);
 
     useEffect(() => {
         try {
@@ -314,8 +388,9 @@ export default function WorldCanvas() {
     }, []);
 
     useEffect(() => {
-        if (!saveReady || interior?.id !== 'player-home') {
+        if (!authChecked || !saveReady || !authenticated) {
             setShowWelcomeTour(false);
+            setGameStarted(false);
             return;
         }
 
@@ -326,11 +401,14 @@ export default function WorldCanvas() {
             const completed =
                 localStorage.getItem('lagos-life-welcome-tour-completed') === 'true';
 
-            setShowWelcomeTour(pending && !completed);
+            const tourIncomplete = pending && !completed;
+            setShowWelcomeTour(tourIncomplete && interior?.id === 'player-home');
+            setGameStarted(!tourIncomplete);
         } catch {
             setShowWelcomeTour(false);
+            setGameStarted(true);
         }
-    }, [interior?.id, saveReady]);
+    }, [authChecked, authenticated, interior?.id, saveReady]);
 
     const openHome = () => {
         const home = playerHome ?? PLAYER_HOME_INFO;
@@ -347,18 +425,18 @@ export default function WorldCanvas() {
     };
     return (
         <div className="relative h-screen w-full overflow-hidden bg-cyan-400">
-            <NeedSimulation active={authChecked && saveReady && (authenticated || Boolean(player))} />
+            <NeedSimulation active={authChecked && saveReady && authenticated && gameStarted} />
             <GamePersistence onReady={handleSaveReady} />
             <Canvas
                 dpr={[1, 1.5]}
                 camera={{
-                    position: CAMERA_POSITION,
+                    position: PUBLIC_CAMERA_POSITION,
                     fov: 38,
                     near: 0.1,
                     far: 700,
                 }}
             >
-                <SceneCamera interior={interior} />
+                <SceneCamera interior={interior} authenticated={authenticated} />
                 {interior ? (
                     <>
                         {/* Render the selected building's interior */}
@@ -420,48 +498,26 @@ export default function WorldCanvas() {
                         />
 
                         {/* Neighborhoods */}
-                        <BuildingNameScope area="Lumley">
-                            <Mainland roadConnectionZ={godrichZone.c[1]} />
-                        </BuildingNameScope>
-
-                        <BuildingNameScope area="Aberdeen">
-                            <Arbadeen />
-                        </BuildingNameScope>
-
-                        <BuildingNameScope area="Godrich">
-                            <Godrich />
-                        </BuildingNameScope>
-
-                        <BuildingNameScope area="Regent">
-                            <Regent roadConnectionZ={ROUNDABOUT_POSITION[2]} />
-                        </BuildingNameScope>
-
-                        <BuildingNameScope area="Wilkson Road">
-                            <Wilksonroad />
-                        </BuildingNameScope>
-
-                        <BuildingNameScope area="Congo Cross">
-                            <Congocross />
-                        </BuildingNameScope>
-
-                        <BuildingNameScope area="Murrytong">
-                            <Murrytong />
-                        </BuildingNameScope>
+                        <Mainland roadConnectionZ={godrichZone.c[1]} />
+                        <Arbadeen />
+                        <Godrich />
+                        <Regent roadConnectionZ={ROUNDABOUT_POSITION[2]} />
+                        <Wilksonroad />
+                        <Congocross />
+                        <Murrytong />
 
                         <RoadConnections />
                         <Roundabout />
+                        <StreetLights night={night} />
 
-                        <BuildingNameScope area="Hillstation">
-                            <Hillstation />
-                        </BuildingNameScope>
-
-                        <BuildingNameScope area="Leicester Peak">
-                            <Leicesterpeak />
-                        </BuildingNameScope>
+                        <Hillstation />
+                        <Leicesterpeak />
 
                         {/* Locked-angle city camera */}
                         <OrbitControls
+                            key={authenticated ? 'map-unlocked' : 'map-locked'}
                             makeDefault
+                            enabled={authChecked && authenticated}
                             target={TARGET}
                             enableRotate={false}
                             enableDamping
@@ -484,6 +540,11 @@ export default function WorldCanvas() {
                     </>
                 )}
             </Canvas>
+
+            {/* Keep the public map view static and prevent building interactions until sign-in. */}
+            {(!authChecked || !authenticated) && (
+                <div className="pointer-events-auto absolute inset-0 z-40" aria-hidden="true" />
+            )}
 
             {(!authChecked || (requiresSaveHydration && !saveReady)) && (
                 <div className="pointer-events-auto absolute inset-0 z-[200] flex items-center justify-center bg-slate-950/55 px-5 backdrop-blur-sm" role="status" aria-live="polite">
@@ -545,6 +606,7 @@ export default function WorldCanvas() {
                 <WelcomeTour
                     onClose={() => {
                         setShowWelcomeTour(false);
+                        setGameStarted(true);
 
                         try {
                             localStorage.setItem(

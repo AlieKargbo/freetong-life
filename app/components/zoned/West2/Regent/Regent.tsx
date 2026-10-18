@@ -152,16 +152,16 @@ export default function Regent({ roadConnectionZ }: MainlandProps) {
             <EmbassyOne position={[20, 0, -15]} nameOverride="British High Commission" />
 
 
-            <BeautySalon position={[29, 0, - 15]} />
+            <BeautySalon position={[29, 0, - 15]} nameOverride="Golden Comb Studio" />
             <RadioStation position={[15, 0, -23]} nameOverride="SLBC" />
             <Pharmacy position={[28.5, 0, - 1]} nameOverride="City Pharmacy" />
-            <MediumClassShop position={[22, 0, - 26]} />
+            <MediumClassShop position={[22, 0, - 26]} nameOverride="St Mary's Supermarket" />
             <MiddleIncomeHouseOne position={[28.5, 0, 4]} />
             <MiddleIncomeHouseOne position={[33, 0, 4]} />
              <Hotel position={[29, 0, - 10]} nameOverride="Swiss Hotel" />
             <SecondarySchool position={[20, 0, - 33]} nameOverride="American International School of Freetown" />
 
-            <PresidentialCompound position={[southernCx + 8, 0, southernCz + 10]} />
+            <PresidentialCompound position={[southernCx + 8, 0, southernCz + 10]} nameOverride="State Lodge" />
             <OfficeTowerTwo position={[29.5, 0, - 55]} nameOverride="Orange Office" />
             {treePositions.map(([x, z], index) => (
                 <Tree key={index} position={[x, 0, z]} />

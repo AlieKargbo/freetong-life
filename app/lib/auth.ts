@@ -31,8 +31,12 @@ export async function getSessionPlayer() {
 export async function clearSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (token && /^[\da-f]{64}$/.test(token)) {
-    await deleteSession(createHash('sha256').update(token).digest('hex'));
+  try {
+    if (token && /^[\da-f]{64}$/.test(token)) {
+      await deleteSession(createHash('sha256').update(token).digest('hex'));
+    }
+  } finally {
+    // Always expire the browser cookie, even if deleting its database row fails.
+    cookieStore.delete(SESSION_COOKIE);
   }
-  cookieStore.delete(SESSION_COOKIE);
 }

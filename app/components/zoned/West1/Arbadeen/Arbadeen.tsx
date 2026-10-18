@@ -122,11 +122,11 @@ export default function Aberdeen() {
                 <meshStandardMaterial color="#6b7280" roughness={0.95} />
             </mesh>
 
-            <Hotel position={[-31, 0, 17]} />
-            <Lighthouse position={[-38, 0, 17]} />
-            <FishGrill position={[-33, 0, 24]} />
+            <Hotel position={[-31, 0, 17]} nameOverride="Bintumani Hotel" />
+            <Lighthouse position={[-38, 0, 17]} nameOverride="Aberdeen Lighthouse" />
+            <FishGrill position={[-33, 0, 24]} nameOverride="Lagoonda" />
             <group position={[-24, 0, 22.9]} scale={0.6}>
-                <FamilyRestaurant position={[0, 0, 0]} />
+                <FamilyRestaurant position={[0, 0, 0]} nameOverride="Olba Restaurant" cuisine="sierra-leonean" />
             </group>
 
             {/* Zone Label */}

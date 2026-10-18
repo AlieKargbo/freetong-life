@@ -16,7 +16,9 @@ import NeedsPanel, { NEED_INFO } from './NeedsPanel';
 import { calculateMood, needSatisfaction } from '@/app/Game/needs';
 import { BUY_ITEMS } from '@/app/Game/storeCatalog';
 import { SKILL_INFO, SKILL_NAMES, skillLevelForXp, skillXpForNextLevel } from '@/app/Game/skills';
-import { FOOD_MENU } from '@/app/Game/foodMenu';
+import { FOOD_MENUS } from '@/app/Game/foodMenu';
+import { BUILDING_SERVICES } from '@/app/Game/buildingServices';
+import { CAREER_JOBS, getCareerRank, getCareerShiftPay } from '@/app/Game/careers';
 import { canFundStartup, getDreamObjectives, isDreamComplete } from '@/app/Game/dreams';
 import { DREAMS } from '@/app/components/Game-setup/CharacterData';
 import { sendPlayerMessage, sendPlayerPayment } from '../../utils/MultiplayerPresence';
@@ -31,7 +33,7 @@ type Props = {
   onClosePanel?: () => void;
 };
 
-const tabs = ['Profile', 'Needs', 'Goals', 'Skills', 'People', 'Career', 'Buy', 'Phone'];
+const tabs = ['Profile', 'Needs', 'Goals', 'Skills', 'People', 'Career', 'Buy'];
 
 export default function PlayerStatusBar({
   onRotateRoom,
@@ -53,15 +55,17 @@ export default function PlayerStatusBar({
   const multiplayerError = useGame((state) => state.multiplayerError);
   const purchases = useGame((state) => state.purchases);
   const hasCafeJob = useGame((state) => state.hasCafeJob);
-  const isOnCafeShift = useGame((state) => state.isOnCafeShift);
-  const cafeShiftTasks = useGame((state) => state.cafeShiftTasks);
   const shiftsCompleted = useGame((state) => state.shiftsCompleted);
+  const careerProgress = useGame((state) => state.careerProgress);
   const firstDayComplete = useGame((state) => state.firstDayComplete);
   const skills = useGame((state) => state.skills);
   const skillGoalRewarded = useGame((state) => state.skillGoalRewarded);
   const dream = useGame((state) => state.dream);
   const dreamProgress = useGame((state) => state.dreamProgress);
-  const interiorId = useGame((state) => state.interior?.id ?? null);
+  const interior = useGame((state) => state.interior);
+  const interiorId = interior?.id ?? null;
+  const foodMenu = interior?.cuisine ? FOOD_MENUS[interior.cuisine] : [];
+  const buildingServices = interiorId ? BUILDING_SERVICES[interiorId] ?? [] : [];
   const mood = calculateMood(needs);
   const lowestNeed = NEED_INFO.reduce((lowest, item) => needSatisfaction(needs, item.key) < needSatisfaction(needs, lowest.key) ? item : lowest, NEED_INFO[0]);
   const lowestNeedValue = needSatisfaction(needs, lowestNeed.key);
@@ -71,6 +75,9 @@ export default function PlayerStatusBar({
     : objective);
   const dreamComplete = isDreamComplete(dreamState);
   const startupReady = canFundStartup(dreamState);
+  const activeCareerJob = CAREER_JOBS.find((job) => job.id === careerProgress.activeJobId) ?? null;
+  const activeShiftJob = CAREER_JOBS.find((job) => job.id === careerProgress.activeShiftJobId) ?? null;
+  const hustleLevel = skillLevelForXp(skills.hustle);
   const selectedDream = DREAMS.find((item) => item.name === dream);
   const avatar = player?.body === 'Man' ? '🧑🏾' : '👩🏾';
   const displayName = player?.name?.replace(/^@/, '') || 'Your Sim';
@@ -97,12 +104,14 @@ export default function PlayerStatusBar({
   const [messageDraft, setMessageDraft] = useState('');
   const [paymentDraft, setPaymentDraft] = useState('');
   const [phoneNotice, setPhoneNotice] = useState('');
+  const [foodNotice, setFoodNotice] = useState('');
+  const [serviceNotice, setServiceNotice] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const controlled = openTab !== undefined;
   const modalOpen = controlled ? openTab !== null : needsOpen;
   const selectedTab = controlled ? (openTab ?? 'Profile') : activeTab;
-  const visibleTabs = interiorId === 'fish-grill' ? [...tabs, 'Food'] : tabs;
+  const visibleTabs = foodMenu.length > 0 ? [...tabs, 'Food'] : tabs;
   const normalizedUsername = playerUsername.replace(/^@/, '').toLowerCase();
   const conversation = activeContact
     ? messages.filter((message) => (message.from === normalizedUsername && message.to === activeContact) || (message.to === normalizedUsername && message.from === activeContact))
@@ -529,52 +538,114 @@ export default function PlayerStatusBar({
                 {selectedTab === 'Career' && (
                   <section className="space-y-4">
                     <div className="rounded-2xl bg-emerald-50 p-4">
-                      <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Starter job</p>
-                      <h3 className="mt-1 text-xl font-extrabold text-slate-900">Ice Cream Cafe crew</h3>
-                      <p className="mt-1 text-sm text-slate-600">Work at the Lumley cafe. Complete three one-hour tasks per shift for SLE25,000; Hustle level 2 adds a 10% pay bonus.</p>
+                      <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Jobs and careers</p>
+                      <h3 className="mt-1 text-xl font-extrabold text-slate-900">Choose where you work</h3>
+                      <p className="mt-1 text-sm text-slate-600">Accept jobs, travel to the workplace, and complete each task for a shift payout. Promotions and Hustle skill increase your pay.</p>
                     </div>
 
-                    {!hasCafeJob ? (
-                      <button type="button" onClick={() => game.acceptCafeJob()} className="w-full rounded-full bg-emerald-500 px-5 py-3 font-bold text-white hover:bg-emerald-600">
-                        Accept the job
-                      </button>
-                    ) : (
-                      <>
-                        <p className="rounded-2xl bg-slate-100 p-4 text-sm text-slate-700">Shifts completed: <strong>{shiftsCompleted}</strong></p>
-                        {isOnCafeShift ? (
-                          <div className="space-y-3 rounded-2xl border border-slate-200 p-4">
-                            <p className="font-bold text-slate-900">Shift tasks · {cafeShiftTasks}/3</p>
-                            <div className="flex gap-2" aria-label={`${cafeShiftTasks} of 3 shift tasks complete`}>
-                              {[0, 1, 2].map((task) => <span key={task} className={`h-2 flex-1 rounded-full ${task < cafeShiftTasks ? 'bg-emerald-500' : 'bg-slate-200'}`} />)}
-                            </div>
-                            <button type="button" disabled={interiorId !== 'ice-cream-cafe'} onClick={() => game.completeCafeTask()} className="w-full rounded-full bg-slate-900 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">
-                              {['Prepare a cone', 'Serve an order', 'Restock the counter'][cafeShiftTasks] ?? 'Complete shift'}
-                            </button>
-                          </div>
-                        ) : interiorId === 'ice-cream-cafe' ? (
-                          <button type="button" onClick={() => game.startCafeShift()} className="w-full rounded-full bg-emerald-500 px-5 py-3 font-bold text-white hover:bg-emerald-600">
-                            Start a shift
-                          </button>
-                        ) : (
-                          <div className="space-y-3 rounded-2xl bg-slate-100 p-4">
-                            <p className="text-sm text-slate-700">Go to <strong>Ice Cream Cafe</strong> in Lumley to start your shift.</p>
-                            <button type="button" onClick={() => { closeNeeds(); onNavigate?.('map'); }} className="w-full rounded-full bg-slate-900 px-5 py-3 font-bold text-white">
-                              Open the city map
-                            </button>
-                          </div>
+                    {activeCareerJob && (
+                      <div className="rounded-2xl border border-emerald-200 bg-white p-4">
+                        <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Current career</p>
+                        <p className="mt-1 font-extrabold text-slate-900">{activeCareerJob.title}</p>
+                        <p className="mt-1 text-sm text-slate-600">
+                          {getCareerRank(careerProgress.jobs[activeCareerJob.id].shiftsCompleted).title} · {careerProgress.jobs[activeCareerJob.id].shiftsCompleted} shifts · {CURRENCY}{getCareerShiftPay(activeCareerJob, careerProgress.jobs[activeCareerJob.id].shiftsCompleted, hustleLevel).toLocaleString('en-US')} per shift
+                        </p>
+                        {getCareerRank(careerProgress.jobs[activeCareerJob.id].shiftsCompleted).nextRequirement !== null && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            {getCareerRank(careerProgress.jobs[activeCareerJob.id].shiftsCompleted).shiftsToNext} more shifts to the next promotion
+                          </p>
                         )}
-                      </>
+                        {activeShiftJob && (
+                          <p className="mt-2 rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">
+                            Shift in progress: {activeShiftJob.tasks[careerProgress.shiftTaskIndex] ?? 'Ready to collect your payout'} ({careerProgress.shiftTaskIndex}/{activeShiftJob.tasks.length} tasks complete)
+                          </p>
+                        )}
+                      </div>
                     )}
+
+                    {CAREER_JOBS.map((job) => {
+                      const accepted = careerProgress.acceptedJobIds.includes(job.id);
+                      const active = careerProgress.activeJobId === job.id;
+                      const onThisShift = careerProgress.activeShiftJobId === job.id;
+                      const stats = careerProgress.jobs[job.id];
+                      const rank = getCareerRank(stats.shiftsCompleted);
+                      const pay = getCareerShiftPay(job, stats.shiftsCompleted, hustleLevel);
+                      const canWorkHere = interiorId === job.locationId;
+
+                      return (
+                        <article key={job.id} className="space-y-3 rounded-2xl border border-slate-200 p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{job.career} · {job.employer}</p>
+                              <h4 className="mt-1 font-extrabold text-slate-900">{job.title}</h4>
+                              <p className="mt-1 text-sm text-slate-600">{job.tasks.length} tasks per shift · {CURRENCY}{pay.toLocaleString('en-US')} payout</p>
+                            </div>
+                            {active && <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">Active</span>}
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between gap-2 text-xs text-slate-600">
+                              <span>{rank.title} · {stats.shiftsCompleted} shifts completed</span>
+                              <span>{stats.lifetimeEarnings > 0 ? `${CURRENCY}${stats.lifetimeEarnings.toLocaleString('en-US')} earned` : 'Career just started'}</span>
+                            </div>
+                            {rank.nextRequirement !== null ? (
+                              <p className="mt-1 text-xs text-slate-500">{rank.shiftsToNext} more shifts to promotion at {rank.nextRequirement} shifts</p>
+                            ) : (
+                              <p className="mt-1 text-xs text-emerald-700">Top rank reached · 15% career pay bonus</p>
+                            )}
+                          </div>
+
+                          {onThisShift ? (
+                            <div className="space-y-3 rounded-xl bg-slate-50 p-3">
+                              <div className="flex items-center justify-between text-sm font-bold text-slate-800">
+                                <span>Shift progress</span>
+                                <span>{careerProgress.shiftTaskIndex}/{job.tasks.length}</span>
+                              </div>
+                              <div className="flex gap-2" aria-label={`${careerProgress.shiftTaskIndex} of ${job.tasks.length} shift tasks complete`}>
+                                {job.tasks.map((task, index) => <span key={task} className={`h-2 flex-1 rounded-full ${index < careerProgress.shiftTaskIndex ? 'bg-emerald-500' : 'bg-slate-200'}`} />)}
+                              </div>
+                              {canWorkHere ? (
+                                <button type="button" onClick={() => game.completeCareerTask()} className="w-full rounded-full bg-slate-900 px-5 py-3 font-bold text-white hover:bg-slate-800">
+                                  {job.tasks[careerProgress.shiftTaskIndex] ?? 'Complete shift'}
+                                </button>
+                              ) : (
+                                <p className="text-sm text-slate-600">Return to {job.employer} to continue this shift.</p>
+                              )}
+                            </div>
+                          ) : !accepted ? (
+                            <button type="button" disabled={Boolean(activeShiftJob)} onClick={() => game.acceptCareerJob(job.id)} className="w-full rounded-full bg-emerald-500 px-5 py-3 font-bold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50">
+                              Accept job
+                            </button>
+                          ) : !active ? (
+                            <button type="button" disabled={Boolean(activeShiftJob)} onClick={() => game.selectCareerJob(job.id)} className="w-full rounded-full bg-slate-900 px-5 py-3 font-bold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">
+                              {activeShiftJob ? `Finish your ${activeShiftJob.employer} shift first` : 'Choose this career'}
+                            </button>
+                          ) : canWorkHere ? (
+                            <button type="button" onClick={() => game.startCareerShift()} className="w-full rounded-full bg-emerald-500 px-5 py-3 font-bold text-white hover:bg-emerald-600">
+                              Start a shift
+                            </button>
+                          ) : (
+                            <div className="space-y-2 rounded-xl bg-slate-50 p-3">
+                              <p className="text-sm text-slate-600">Travel to {job.employer} to start this shift.</p>
+                              <button type="button" onClick={() => { closeNeeds(); onNavigate?.('map'); }} className="w-full rounded-full bg-slate-900 px-5 py-3 font-bold text-white hover:bg-slate-800">
+                                Open the city map
+                              </button>
+                            </div>
+                          )}
+                        </article>
+                      );
+                    })}
                   </section>
                 )}
 
-                {selectedTab === 'Food' && interiorId === 'fish-grill' && (
+                {selectedTab === 'Food' && foodMenu.length > 0 && (
                   <section className="space-y-4">
                     <div className="rounded-2xl bg-orange-50 p-4">
-                      <h3 className="text-xl font-extrabold text-slate-900">Fish Grill menu</h3>
-                      <p className="mt-1 text-sm text-slate-600">Order a meal here to refill hunger. Food is charged to your wallet.</p>
+                      <h3 className="text-xl font-extrabold text-slate-900">{interior?.name} menu</h3>
+                      <p className="mt-1 text-sm text-slate-600">Choose a dish to buy and eat it right away. Your wallet is charged, and hunger and fun improve.</p>
                     </div>
-                    {FOOD_MENU.map((food) => (
+                    <p aria-live="polite" className="min-h-5 text-sm font-semibold text-emerald-700">{foodNotice}</p>
+                    {foodMenu.map((food) => (
                       <article key={food.id} className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4">
                         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-50 text-2xl">🍽️</span>
                         <div className="min-w-0 flex-1">
@@ -582,8 +653,8 @@ export default function PlayerStatusBar({
                           <p className="text-xs text-slate-500">{food.description}</p>
                           <p className="mt-1 text-xs font-semibold text-orange-700">+{food.hunger} hunger · +{food.fun} fun</p>
                         </div>
-                        <button type="button" disabled={money < food.price} onClick={() => game.buyFood(food.id)} className="shrink-0 rounded-full bg-emerald-500 px-4 py-2 text-sm font-bold text-white disabled:bg-slate-300">
-                          {CURRENCY}{food.price.toLocaleString('en-US')}
+                        <button type="button" disabled={money < food.price} onClick={() => setFoodNotice(game.buyFood(food.id) ? `${food.name} bought and eaten. Hunger and fun restored.` : 'Unable to place that order. Check your balance and try again.')} className="shrink-0 rounded-full bg-emerald-500 px-4 py-2 text-sm font-bold text-white disabled:bg-slate-300">
+                          Buy &amp; eat · {CURRENCY}{food.price.toLocaleString('en-US')}
                         </button>
                       </article>
                     ))}
@@ -730,6 +801,31 @@ export default function PlayerStatusBar({
 
                 {selectedTab === 'Buy' && (
                   <section className="space-y-4">
+                    {buildingServices.length > 0 && (
+                      <div className="space-y-3 rounded-2xl border border-sky-100 bg-sky-50 p-4">
+                        <div>
+                          <h3 className="text-lg font-extrabold text-slate-900">Services at {interior?.name}</h3>
+                          <p className="mt-1 text-sm text-slate-600">Choose a service to pay and use it now. Your needs update immediately.</p>
+                        </div>
+                        <p aria-live="polite" className="min-h-5 text-sm font-semibold text-emerald-700">{serviceNotice}</p>
+                        {buildingServices.map((service) => (
+                          <article key={service.id} className="rounded-xl border border-sky-100 bg-white p-3">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-slate-900">{service.name}</h4>
+                                <p className="mt-1 text-sm text-slate-600">{service.description}</p>
+                                <p className="mt-2 text-xs font-semibold text-sky-800">
+                                  {Object.entries(service.effects).map(([need, amount]) => `${amount > 0 ? '+' : ''}${amount} ${need}`).join(' · ')}
+                                </p>
+                              </div>
+                              <button type="button" disabled={money < service.price} onClick={() => setServiceNotice(game.buyBuildingService(service.id) ? `${service.name} purchased. Your needs have been updated.` : 'Unable to use this service. Check your balance and try again.')} className="shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300">
+                                Use · {CURRENCY} {service.price.toLocaleString('en-US')}
+                              </button>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    )}
                     <div className="flex items-center justify-between rounded-2xl bg-emerald-50 p-4">
                       <div>
                         <p className="text-sm font-semibold text-slate-500">Available balance</p>
@@ -799,7 +895,7 @@ export default function PlayerStatusBar({
                                 {[
                                   { tab: 'Profile', label: 'My Sim', emoji: '👤', tile: 'from-violet-400 to-fuchsia-500' },
                                   { tab: 'Needs', label: 'Needs', emoji: '💚', tile: 'from-emerald-400 to-teal-600' },
-                                  { tab: 'Buy', label: interiorId === 'fish-grill' ? 'Food' : 'Shop', emoji: '🛍️', tile: 'from-orange-400 to-rose-500' },
+                                  { tab: 'Buy', label: foodMenu.length > 0 ? 'Food' : buildingServices.length > 0 ? 'Services' : 'Shop', emoji: '🛍️', tile: 'from-orange-400 to-rose-500' },
                                   { tab: 'Map', label: 'City', emoji: '🗺️', tile: 'from-cyan-400 to-blue-600' },
                                   { tab: 'Messages', label: 'Messenger', emoji: '💬', tile: 'from-green-400 to-emerald-600' },
                                   { tab: 'Settings', label: 'Settings', emoji: '⚙️', tile: 'from-slate-400 to-slate-700' },
@@ -810,8 +906,8 @@ export default function PlayerStatusBar({
                                     setPhoneNotice('');
                                     if (['Messages', 'Settings', 'Bank', 'Kallah'].includes(app.tab)) setPhoneApp(app.tab);
                                     else if (app.tab === 'Map') { closeNeeds(); onNavigate?.('map'); }
-                                    else if (onOpenTab) onOpenTab(app.tab === 'Buy' && interiorId === 'fish-grill' ? 'Food' : app.tab);
-                                    else setActiveTab(app.tab === 'Buy' && interiorId === 'fish-grill' ? 'Food' : app.tab);
+                                    else if (onOpenTab) onOpenTab(app.tab === 'Buy' && foodMenu.length > 0 ? 'Food' : app.tab);
+                                    else setActiveTab(app.tab === 'Buy' && foodMenu.length > 0 ? 'Food' : app.tab);
                                   }} className="group flex min-w-0 flex-col items-center gap-1.5 rounded-2xl text-center text-[10px] font-semibold text-white drop-shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                                     <span className={`grid h-[54px] w-[54px] place-items-center rounded-[16px] bg-gradient-to-br ${app.tile} text-[25px] shadow-lg ring-1 ring-white/35 transition group-hover:scale-105`}>{app.emoji}</span>
                                     <span className="leading-tight">{app.label}</span>

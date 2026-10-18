@@ -39,7 +39,7 @@ export const info: BuildingInfo = {
 };
 
 
-type Props = { position: [number, number, number] };
+type Props = { position: [number, number, number]; nameOverride?: string };
 
 export const TIKI_BAR_HEIGHT = 2.15;
 
@@ -53,7 +53,7 @@ const BOTTLES = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7'];
 const STOOLS = [-0.6, 0, 0.6];
 
 // Tiki bar: open wooden deck, four posts, thatched cone roof, counter with stools and a bottle shelf.
-export default function TikiBar({ position }: Props) {
+export default function TikiBar({ position, nameOverride }: Props) {
   return (
     <group position={position}>
       {/* Deck */}
@@ -121,7 +121,7 @@ export default function TikiBar({ position }: Props) {
         TIKI BAR
       </Text>
 
-      <BuildingPin emoji={info.emoji} label={info.name} height={TIKI_BAR_HEIGHT} info={info} />
+      <BuildingPin emoji={info.emoji} label={info.name} height={TIKI_BAR_HEIGHT} nameOverride={nameOverride} info={info} />
     </group>
   );
 }

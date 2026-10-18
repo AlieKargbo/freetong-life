@@ -41,6 +41,8 @@ export type InteriorSpec = {
   furniture: FurnitureSpec[];
 };
 
+export type FoodCuisine = 'sierra-leonean' | 'african' | 'world' | 'dessert';
+
 export type BuildingInfo = {
   id: string;
   name: string;
@@ -50,5 +52,6 @@ export type BuildingInfo = {
   banner?: { badge?: string; line: string }; // card at the top while inside
   activities: { emoji: string; label: string }[];
   shops?: boolean; // shows the "Player shops here" row in the popup
+  cuisine?: FoodCuisine;
   interior: InteriorSpec;
 };

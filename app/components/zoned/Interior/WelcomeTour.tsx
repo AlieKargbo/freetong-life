@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { game } from '../../utils/Store';
 
 type WelcomeTourProps = {
   onClose: () => void;
@@ -48,6 +49,11 @@ export default function WelcomeTour({ onClose }: WelcomeTourProps) {
   const [step, setStep] = useState(0);
   const current = TOUR_STEPS[step];
   const lastStep = step === TOUR_STEPS.length - 1;
+
+  useEffect(() => {
+    game.setInteractionPromptsHidden(true);
+    return () => game.setInteractionPromptsHidden(false);
+  }, []);
 
   function finish() {
     try {

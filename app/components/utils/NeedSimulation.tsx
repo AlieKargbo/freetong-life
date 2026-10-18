@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
+import { GAME_TIME_SCALE } from '@/app/Game/clock';
 import { game } from './Store';
 
 // A 24-hour game day takes 10 real-world minutes (2.4 game minutes per second).
-export const SIM_MINUTES_PER_REAL_SECOND = 2.4;
+export const SIM_MINUTES_PER_REAL_SECOND = GAME_TIME_SCALE / 60;
 
 export default function NeedSimulation({ active }: { active: boolean }) {
   useEffect(() => {

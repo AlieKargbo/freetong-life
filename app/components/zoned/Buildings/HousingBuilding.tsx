@@ -8,6 +8,7 @@ type Props = {
   position: [number, number, number];
   level: 'low' | 'middle' | 'high';
   label?: string;
+  nameOverride?: string;
 };
 
 const W = 3.2;
@@ -45,6 +46,7 @@ export default function HousingBuilding({
   position,
   level,
   label,
+  nameOverride,
 }: Props) {
   const style = HOUSING_STYLES[level];
   const front = D / 2;
@@ -191,6 +193,7 @@ export default function HousingBuilding({
         emoji={style.emoji}
         label={label ?? `${level[0].toUpperCase()}${level.slice(1)} Income House`}
         height={H + 0.3}
+          nameOverride={nameOverride}
       />
     </group>
   );

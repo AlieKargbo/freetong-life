@@ -36,7 +36,7 @@ export const info: BuildingInfo = {
 };
 
 
-type Props = { position: [number, number, number] };
+type Props = { position: [number, number, number]; nameOverride?: string };
 
 export const GYM_HEIGHT = 3.0;
 const W = 3.2;
@@ -44,7 +44,7 @@ const H = 2;
 const D = 2.8;
 
 // Gym: dark body with an orange roof band, glass front, sign and a giant dumbbell on the roof.
-export default function Gym({ position }: Props) {
+export default function Gym({ position, nameOverride }: Props) {
   const front = D / 2;
 
   return (
@@ -100,7 +100,7 @@ export default function Gym({ position }: Props) {
       </group>
 
       {/* Icon on the building */}
-      <BuildingPin emoji={info.emoji} label={info.name} height={GYM_HEIGHT} info={info} />
+      <BuildingPin emoji={info.emoji} label={info.name} height={GYM_HEIGHT} nameOverride={nameOverride} info={info} />
     </group>
   );
 }

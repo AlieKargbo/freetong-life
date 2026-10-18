@@ -139,15 +139,15 @@ export default function Wilksonroad() {
                 <meshStandardMaterial color="#6b7280" />
             </mesh>
             x, y, z
-            <Hospital position={[8, 0, 5.5]} nameOverride="Lumely Hospital" />
+            <Hospital position={[8, 0, 5.5]} nameOverride="Life Care" />
             <SecondarySchool position={[8, 0, 1]} nameOverride="Eureka Prep" />
             <PoliceStation position={[14, 0, 5.5]} nameOverride="Lumely Police" />
             <YouthSportCenter position={[-10, 0, 2.5]} nameOverride="YSC" />
 
             <FineDiningRestaurant position={[0, 0, 0]} nameOverride="Basha Bakery" />
-            <FamilyRestaurant position={[18, 0, 0]} nameOverride="Roofgarden" />
-            <LowIncomeHouseOne position={[-4.5, 0, -6.5]} />
-            <LowIncomeHouseTwo position={[4.5, 0, -6.5]} />
+            <FamilyRestaurant position={[18, 0, 0]} nameOverride="Roofgarden" cuisine="world" />
+            <LowIncomeHouseOne position={[-4.5, 0, -6.5]} nameOverride="Wilkson Road Family Home" />
+            <LowIncomeHouseTwo position={[4.5, 0, -6.5]} nameOverride="Congo Cross Courtyard Home" />
             {/* <LowClassShop position={[-10, 0, 14]} /> */}
             {/* <MediumClassShop position={[-3, 0, 14]} />
             <HighClassShop position={[4, 0, 14]} /> */}

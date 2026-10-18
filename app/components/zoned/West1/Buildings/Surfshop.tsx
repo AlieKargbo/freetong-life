@@ -34,7 +34,7 @@ export const info: BuildingInfo = {
 };
 
 
-type Props = { position: [number, number, number] };
+type Props = { position: [number, number, number]; nameOverride?: string };
 
 export const SURF_SHOP_HEIGHT = 1.7;
 const W = 1.8;
@@ -44,7 +44,7 @@ const D = 1.3;
 const BOARDS = ['#facc15', '#ef4444', '#a855f7'];
 
 // Surf shop: turquoise shack, striped awning, sign board and surfboards leaning on the side.
-export default function SurfShop({ position }: Props) {
+export default function SurfShop({ position, nameOverride }: Props) {
   const front = D / 2;
 
   return (
@@ -94,7 +94,7 @@ export default function SurfShop({ position }: Props) {
         </mesh>
       ))}
 
-      <BuildingPin emoji={info.emoji} label={info.name} height={SURF_SHOP_HEIGHT} info={info} />
+      <BuildingPin emoji={info.emoji} label={info.name} height={SURF_SHOP_HEIGHT} nameOverride={nameOverride} info={info} />
     </group>
   );
 }

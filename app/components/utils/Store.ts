@@ -5,8 +5,10 @@ import { advanceNeeds, changeNeed, INITIAL_NEEDS, sanitizeNeeds, type NeedName, 
 import { ACTIVITY_CONTEXTS, ACTIVITY_DURATIONS_MINUTES, performNeedAction, type NeedAction, type NeedActivity, type NeedActivityContext } from '@/app/Game/needActions';
 import { BUY_ITEMS } from '@/app/Game/storeCatalog';
 import { ACTION_SKILL_XP, INITIAL_SKILL_XP, SKILL_NAMES, sanitizeSkillXp, skillLevelForXp, type SkillName, type SkillXp } from '@/app/Game/skills';
-import { FOOD_MENU } from '@/app/Game/foodMenu';
+import { FOOD_MENUS } from '@/app/Game/foodMenu';
+import { BUILDING_SERVICES } from '@/app/Game/buildingServices';
 import { canFundStartup, getDreamObjectives, INITIAL_DREAM_PROGRESS, type DreamProgress } from '@/app/Game/dreams';
+import { CAREER_JOBS, INITIAL_CAREER_PROGRESS, getCareerShiftPay, isCareerJobId, sanitizeCareerProgress, type CareerJobId, type CareerProgress } from '@/app/Game/careers';
 
 // Shared currency prefix for Sierra Leonean leones.
 export const CURRENCY = 'SLE';
@@ -52,6 +54,7 @@ type State = {
   isOnCafeShift: boolean;
   cafeShiftTasks: number;
   shiftsCompleted: number;
+  careerProgress: CareerProgress;
   firstDayComplete: boolean;
   skills: SkillXp;
   skillGoalRewarded: boolean;
@@ -74,6 +77,7 @@ type State = {
 
 type Actions = {
   setAuthenticated: (authenticated: boolean) => void;
+  signOut: () => void;
   setInteractionPromptsHidden: (hidden: boolean) => void;
   setPlayerUsername: (username: string) => void;
   reportPlayerMovement: (position: [number, number], target: [number, number] | null) => void;
@@ -88,10 +92,15 @@ type Actions = {
   advanceSimulation: (elapsedMinutes: number) => void;
   buyItem: (itemId: string) => boolean;
   buyFood: (foodId: string) => boolean;
+  buyBuildingService: (serviceId: string) => boolean;
   fundStartup: () => boolean;
   acceptCafeJob: () => void;
   startCafeShift: () => boolean;
   completeCafeTask: () => boolean;
+  acceptCareerJob: (jobId: CareerJobId) => boolean;
+  selectCareerJob: (jobId: CareerJobId) => boolean;
+  startCareerShift: () => boolean;
+  completeCareerTask: () => boolean;
   setPlayer: (player: SimAppearance) => void;
   setDream: (dream: string) => void;
   setCharacterSetup: (setup: CharacterSetup) => void;
@@ -116,12 +125,10 @@ type GameStore = State & Actions;
 
 export type SavedGameProgress = Pick<State,
   'playerUsername' | 'playerPosition' | 'needs' | 'money' | 'purchases' |
-  'hasCafeJob' | 'isOnCafeShift' | 'cafeShiftTasks' | 'shiftsCompleted' |
+  'hasCafeJob' | 'isOnCafeShift' | 'cafeShiftTasks' | 'shiftsCompleted' | 'careerProgress' |
   'firstDayComplete' | 'skills' | 'skillGoalRewarded' | 'dream' | 'dreamProgress' | 'characterSetup' | 'contacts' | 'messages' | 'walletTransfers' | 'player' | 'playerHome' | 'currentLocation' | 'interior'
 >;
 
-const CAFE_SHIFT_TASKS = 3;
-const CAFE_SHIFT_PAY = 25_000;
 const FIRST_DAY_REWARD = 5_000;
 const SKILL_GOAL_REWARD = 5_000;
 
@@ -161,6 +168,7 @@ const useGameStore = create<GameStore>()((set, get) => ({
   isOnCafeShift: false,
   cafeShiftTasks: 0,
   shiftsCompleted: 0,
+  careerProgress: INITIAL_CAREER_PROGRESS,
   firstDayComplete: false,
   skills: INITIAL_SKILL_XP,
   skillGoalRewarded: false,
@@ -180,6 +188,42 @@ const useGameStore = create<GameStore>()((set, get) => ({
   chat: null,
   interactionPromptsHidden: false,
   setAuthenticated: (authenticated) => set({ authenticated }),
+  signOut: () => set({
+    authenticated: false,
+    playerUsername: '',
+    playerPosition: [0, 0],
+    playerTarget: null,
+    remotePlayers: [],
+    multiplayerStatus: 'disconnected',
+    multiplayerError: null,
+    needs: INITIAL_NEEDS,
+    activity: null,
+    money: 1_091_000,
+    purchases: {},
+    hasCafeJob: false,
+    isOnCafeShift: false,
+    cafeShiftTasks: 0,
+    shiftsCompleted: 0,
+    careerProgress: INITIAL_CAREER_PROGRESS,
+    firstDayComplete: false,
+    skills: INITIAL_SKILL_XP,
+    skillGoalRewarded: false,
+    dream: null,
+    dreamProgress: INITIAL_DREAM_PROGRESS,
+    characterSetup: null,
+    contacts: [],
+    messages: [],
+    messageNotification: null,
+    walletTransfers: [],
+    player: null,
+    playerHome: null,
+    popup: null,
+    interior: null,
+    currentLocation: null,
+    travel: null,
+    chat: null,
+    interactionPromptsHidden: false,
+  }),
   setInteractionPromptsHidden: (interactionPromptsHidden) => set({ interactionPromptsHidden }),
   setPlayerUsername: (playerUsername) => set({ playerUsername }),
   reportPlayerMovement: (playerPosition, playerTarget) => set({ playerPosition, playerTarget }),
@@ -280,9 +324,10 @@ const useGameStore = create<GameStore>()((set, get) => ({
     return true;
   },
   buyFood: (foodId) => {
-    const food = FOOD_MENU.find((item) => item.id === foodId);
     const state = get();
-    if (!food || state.interior?.id !== 'fish-grill' || state.money < food.price) return false;
+    const cuisine = state.interior?.cuisine;
+    const food = cuisine ? FOOD_MENUS[cuisine]?.find((item) => item.id === foodId) : undefined;
+    if (!food || !state.interior?.shops || state.money < food.price) return false;
 
     const skills = { ...state.skills, cooking: state.skills.cooking + 25 };
     const reachedSkillGoal = SKILL_NAMES.some((skill) => skillLevelForXp(skills[skill]) >= 2);
@@ -299,6 +344,20 @@ const useGameStore = create<GameStore>()((set, get) => ({
       skills,
       skillGoalRewarded: state.skillGoalRewarded || rewardSkillGoal,
     });
+    return true;
+  },
+  buyBuildingService: (serviceId) => {
+    const state = get();
+    const service = state.interior
+      ? BUILDING_SERVICES[state.interior.id]?.find((item) => item.id === serviceId)
+      : undefined;
+    if (!service || state.money < service.price) return false;
+
+    const needs = { ...state.needs };
+    for (const [need, change] of Object.entries(service.effects) as [NeedName, number][]) {
+      needs[need] = changeNeed(needs, need, change)[need];
+    }
+    set({ money: state.money - service.price, needs });
     return true;
   },
   fundStartup: () => {
@@ -318,27 +377,59 @@ const useGameStore = create<GameStore>()((set, get) => ({
     });
     return true;
   },
-  acceptCafeJob: () => set({ hasCafeJob: true }),
-  startCafeShift: () => {
+  acceptCafeJob: () => { get().acceptCareerJob('ice-cream-cafe'); },
+  acceptCareerJob: (jobId) => {
+    if (!isCareerJobId(jobId)) return false;
     const state = get();
-    if (!state.hasCafeJob || state.interior?.id !== 'ice-cream-cafe' || state.isOnCafeShift) return false;
-    set({ isOnCafeShift: true, cafeShiftTasks: 0 });
+    if (state.careerProgress.activeShiftJobId) return false;
+    const acceptedJobIds = state.careerProgress.acceptedJobIds.includes(jobId)
+      ? state.careerProgress.acceptedJobIds
+      : [...state.careerProgress.acceptedJobIds, jobId];
+    set({
+      careerProgress: { ...state.careerProgress, acceptedJobIds, activeJobId: jobId },
+      hasCafeJob: state.hasCafeJob || jobId === 'ice-cream-cafe',
+    });
     return true;
   },
-  completeCafeTask: () => {
+  selectCareerJob: (jobId) => {
+    const state = get();
+    if (!state.careerProgress.acceptedJobIds.includes(jobId) || state.careerProgress.activeShiftJobId) return false;
+    set({ careerProgress: { ...state.careerProgress, activeJobId: jobId } });
+    return true;
+  },
+  startCafeShift: () => get().startCareerShift(),
+  startCareerShift: () => {
+    const state = get();
+    const job = CAREER_JOBS.find((candidate) => candidate.id === state.careerProgress.activeJobId);
+    if (!job || !state.careerProgress.acceptedJobIds.includes(job.id) || state.interior?.id !== job.locationId || state.careerProgress.activeShiftJobId) return false;
+    const careerProgress = { ...state.careerProgress, activeShiftJobId: job.id, shiftTaskIndex: 0 };
+    set({ careerProgress, isOnCafeShift: job.id === 'ice-cream-cafe', cafeShiftTasks: 0 });
+    return true;
+  },
+  completeCafeTask: () => get().completeCareerTask(),
+  completeCareerTask: () => {
     let state = get();
-    if (!state.hasCafeJob || !state.isOnCafeShift || state.interior?.id !== 'ice-cream-cafe') return false;
+    const careerProgress = state.careerProgress;
+    const job = CAREER_JOBS.find((candidate) => candidate.id === careerProgress.activeShiftJobId);
+    if (!job || state.interior?.id !== job.locationId) return false;
     state.advanceSimulation(60);
     state = get();
-    const tasks = state.cafeShiftTasks + 1;
+    const currentCareer = state.careerProgress;
+    const currentJob = CAREER_JOBS.find((candidate) => candidate.id === currentCareer.activeShiftJobId);
+    if (!currentJob) return false;
+    const tasks = currentCareer.shiftTaskIndex + 1;
     const careerTasksCompleted = state.dreamProgress.careerTasksCompleted + 1;
-    if (tasks < CAFE_SHIFT_TASKS) {
-      const skills = { ...state.skills, hustle: state.skills.hustle + 40 };
-      const skillLevel = skillLevelForXp(skills.hustle);
-      const rewardSkillGoal = skillLevel >= 2 && !state.skillGoalRewarded;
-      const dreamProgress = preserveDreamCompletion(state, { ...state.dreamProgress, careerTasksCompleted }, { skills });
+    const skillRewards = currentJob.skillRewards;
+    const skills = { ...state.skills };
+    for (const [skill, xp] of Object.entries(skillRewards)) skills[skill as SkillName] += xp ?? 0;
+    const skillLevel = skillLevelForXp(skills.hustle);
+    const rewardSkillGoal = SKILL_NAMES.some((skill) => skillLevelForXp(skills[skill]) >= 2) && !state.skillGoalRewarded;
+    if (tasks < currentJob.tasks.length) {
+      const dreamProgress = preserveDreamCompletion(state, { ...state.dreamProgress, careerTasksCompleted }, { skills, money: state.money + (rewardSkillGoal ? SKILL_GOAL_REWARD : 0) });
+      const nextCareer = { ...currentCareer, shiftTaskIndex: tasks };
       set({
-        cafeShiftTasks: tasks,
+        careerProgress: nextCareer,
+        cafeShiftTasks: currentJob.id === 'ice-cream-cafe' ? tasks : state.cafeShiftTasks,
         dreamProgress,
         skills,
         skillGoalRewarded: state.skillGoalRewarded || rewardSkillGoal,
@@ -346,16 +437,29 @@ const useGameStore = create<GameStore>()((set, get) => ({
       });
       return true;
     }
-    const skills = { ...state.skills, hustle: state.skills.hustle + 40 };
-    const skillLevel = skillLevelForXp(skills.hustle);
-    const rewardSkillGoal = skillLevel >= 2 && !state.skillGoalRewarded;
-    const wage = CAFE_SHIFT_PAY * (skillLevel >= 2 ? 1.1 : 1);
+    const currentStats = currentCareer.jobs[currentJob.id];
+    const wage = getCareerShiftPay(currentJob, currentStats.shiftsCompleted, skillLevel);
+    const jobs = {
+      ...currentCareer.jobs,
+      [currentJob.id]: {
+        shiftsCompleted: currentStats.shiftsCompleted + 1,
+        lifetimeEarnings: currentStats.lifetimeEarnings + wage,
+      },
+    };
+    const completedCareerProgress: CareerProgress = {
+      ...currentCareer,
+      activeShiftJobId: null,
+      shiftTaskIndex: 0,
+      jobs,
+    };
     const lifetimeCareerEarnings = state.dreamProgress.lifetimeCareerEarnings + wage;
     const dreamProgress = preserveDreamCompletion(state, { ...state.dreamProgress, careerTasksCompleted, lifetimeCareerEarnings }, { skills, money: state.money + wage + (rewardSkillGoal ? SKILL_GOAL_REWARD : 0) });
+    const cafeStats = jobs['ice-cream-cafe'];
     set({
-      cafeShiftTasks: CAFE_SHIFT_TASKS,
+      careerProgress: completedCareerProgress,
       isOnCafeShift: false,
-      shiftsCompleted: state.shiftsCompleted + 1,
+      cafeShiftTasks: currentJob.id === 'ice-cream-cafe' ? currentJob.tasks.length : state.cafeShiftTasks,
+      shiftsCompleted: cafeStats.shiftsCompleted,
       money: state.money + wage + (rewardSkillGoal ? SKILL_GOAL_REWARD : 0),
       skills,
       dreamProgress,
@@ -454,8 +558,8 @@ export function useGame<T>(select: (state: State) => T): T {
 // Keep an imperative facade for events originating outside React components.
 export const game = {
   get: (): State => {
-    const { authenticated, playerUsername, playerPosition, playerTarget, remotePlayers, multiplayerStatus, multiplayerError, needs, activity, money, purchases, hasCafeJob, isOnCafeShift, cafeShiftTasks, shiftsCompleted, firstDayComplete, skills, skillGoalRewarded, dream, dreamProgress, characterSetup, contacts, messages, messageNotification, walletTransfers, player, playerHome, popup, interior, currentLocation, travel, chat, interactionPromptsHidden } = useGameStore.getState();
-    return { authenticated, playerUsername, playerPosition, playerTarget, remotePlayers, multiplayerStatus, multiplayerError, needs, activity, money, purchases, hasCafeJob, isOnCafeShift, cafeShiftTasks, shiftsCompleted, firstDayComplete, skills, skillGoalRewarded, dream, dreamProgress, characterSetup, contacts, messages, messageNotification, walletTransfers, player, playerHome, popup, interior, currentLocation, travel, chat, interactionPromptsHidden };
+    const { authenticated, playerUsername, playerPosition, playerTarget, remotePlayers, multiplayerStatus, multiplayerError, needs, activity, money, purchases, hasCafeJob, isOnCafeShift, cafeShiftTasks, shiftsCompleted, careerProgress, firstDayComplete, skills, skillGoalRewarded, dream, dreamProgress, characterSetup, contacts, messages, messageNotification, walletTransfers, player, playerHome, popup, interior, currentLocation, travel, chat, interactionPromptsHidden } = useGameStore.getState();
+    return { authenticated, playerUsername, playerPosition, playerTarget, remotePlayers, multiplayerStatus, multiplayerError, needs, activity, money, purchases, hasCafeJob, isOnCafeShift, cafeShiftTasks, shiftsCompleted, careerProgress, firstDayComplete, skills, skillGoalRewarded, dream, dreamProgress, characterSetup, contacts, messages, messageNotification, walletTransfers, player, playerHome, popup, interior, currentLocation, travel, chat, interactionPromptsHidden };
   },
   getSave: (): SavedGameProgress => {
     const state = useGameStore.getState();
@@ -469,6 +573,7 @@ export const game = {
       isOnCafeShift: state.isOnCafeShift,
       cafeShiftTasks: state.cafeShiftTasks,
       shiftsCompleted: state.shiftsCompleted,
+      careerProgress: state.careerProgress,
       firstDayComplete: state.firstDayComplete,
       skills: state.skills,
       skillGoalRewarded: state.skillGoalRewarded,
@@ -484,17 +589,39 @@ export const game = {
       interior: state.interior,
     };
   },
-  restoreSave: (saved: Partial<SavedGameProgress>) => useGameStore.setState((state) => ({
+  restoreSave: (saved: Partial<SavedGameProgress>) => useGameStore.setState((state) => {
+    const legacyCafeShifts = Number.isInteger(saved.shiftsCompleted) ? Math.max(0, saved.shiftsCompleted!) : state.shiftsCompleted;
+    const legacyCafeTasks = Number.isInteger(saved.cafeShiftTasks) ? Math.max(0, Math.min(CAREER_JOBS[0].tasks.length, saved.cafeShiftTasks!)) : state.cafeShiftTasks;
+    const legacyHasCafeJob = typeof saved.hasCafeJob === 'boolean' ? saved.hasCafeJob : state.hasCafeJob;
+    const legacyIsOnCafeShift = typeof saved.isOnCafeShift === 'boolean' ? saved.isOnCafeShift : state.isOnCafeShift;
+    const careerProgress = saved.careerProgress && typeof saved.careerProgress === 'object'
+      ? sanitizeCareerProgress(saved.careerProgress)
+      : sanitizeCareerProgress({
+        acceptedJobIds: legacyHasCafeJob ? ['ice-cream-cafe'] : [],
+        activeJobId: legacyHasCafeJob ? 'ice-cream-cafe' : null,
+        activeShiftJobId: legacyIsOnCafeShift && legacyHasCafeJob ? 'ice-cream-cafe' : null,
+        shiftTaskIndex: legacyIsOnCafeShift ? legacyCafeTasks : 0,
+        jobs: {
+          ...INITIAL_CAREER_PROGRESS.jobs,
+          'ice-cream-cafe': {
+            shiftsCompleted: legacyCafeShifts,
+            lifetimeEarnings: saved.dreamProgress?.lifetimeCareerEarnings ?? 0,
+          },
+        },
+      });
+    const cafeStats = careerProgress.jobs['ice-cream-cafe'];
+    return {
     ...state,
     playerUsername: typeof saved.playerUsername === 'string' ? saved.playerUsername : state.playerUsername,
     playerPosition: Array.isArray(saved.playerPosition) && saved.playerPosition.length === 2 ? saved.playerPosition as [number, number] : state.playerPosition,
     needs: saved.needs && typeof saved.needs === 'object' ? sanitizeNeeds(saved.needs) : state.needs,
     money: Number.isFinite(saved.money) && (saved.money ?? -1) >= 0 ? saved.money! : state.money,
     purchases: saved.purchases && typeof saved.purchases === 'object' ? saved.purchases : state.purchases,
-    hasCafeJob: typeof saved.hasCafeJob === 'boolean' ? saved.hasCafeJob : state.hasCafeJob,
-    isOnCafeShift: typeof saved.isOnCafeShift === 'boolean' ? saved.isOnCafeShift : state.isOnCafeShift,
-    cafeShiftTasks: Number.isInteger(saved.cafeShiftTasks) ? Math.max(0, Math.min(CAFE_SHIFT_TASKS, saved.cafeShiftTasks!)) : state.cafeShiftTasks,
-    shiftsCompleted: Number.isInteger(saved.shiftsCompleted) ? Math.max(0, saved.shiftsCompleted!) : state.shiftsCompleted,
+    hasCafeJob: careerProgress.acceptedJobIds.includes('ice-cream-cafe'),
+    isOnCafeShift: careerProgress.activeShiftJobId === 'ice-cream-cafe',
+    cafeShiftTasks: careerProgress.activeShiftJobId === 'ice-cream-cafe' ? careerProgress.shiftTaskIndex : legacyCafeTasks,
+    shiftsCompleted: cafeStats.shiftsCompleted,
+    careerProgress,
     firstDayComplete: typeof saved.firstDayComplete === 'boolean' ? saved.firstDayComplete : state.firstDayComplete,
     skills: saved.skills && typeof saved.skills === 'object' ? sanitizeSkillXp(saved.skills) : state.skills,
     skillGoalRewarded: typeof saved.skillGoalRewarded === 'boolean' ? saved.skillGoalRewarded : state.skillGoalRewarded,
@@ -546,9 +673,10 @@ export const game = {
     activity: null,
     popup: null,
     chat: null,
-  })),
+  }; }),
   subscribe: (listener: () => void) => useGameStore.subscribe(listener),
   setAuthenticated: (authenticated: boolean) => useGameStore.getState().setAuthenticated(authenticated),
+  signOut: () => useGameStore.getState().signOut(),
   setInteractionPromptsHidden: (hidden: boolean) => useGameStore.getState().setInteractionPromptsHidden(hidden),
   setPlayerUsername: (username: string) => useGameStore.getState().setPlayerUsername(username),
   reportPlayerMovement: (position: [number, number], target: [number, number] | null) => useGameStore.getState().reportPlayerMovement(position, target),
@@ -563,10 +691,15 @@ export const game = {
   advanceSimulation: (elapsedMinutes: number) => useGameStore.getState().advanceSimulation(elapsedMinutes),
   buyItem: (itemId: string) => useGameStore.getState().buyItem(itemId),
   buyFood: (foodId: string) => useGameStore.getState().buyFood(foodId),
+  buyBuildingService: (serviceId: string) => useGameStore.getState().buyBuildingService(serviceId),
   fundStartup: () => useGameStore.getState().fundStartup(),
   acceptCafeJob: () => useGameStore.getState().acceptCafeJob(),
   startCafeShift: () => useGameStore.getState().startCafeShift(),
   completeCafeTask: () => useGameStore.getState().completeCafeTask(),
+  acceptCareerJob: (jobId: CareerJobId) => useGameStore.getState().acceptCareerJob(jobId),
+  selectCareerJob: (jobId: CareerJobId) => useGameStore.getState().selectCareerJob(jobId),
+  startCareerShift: () => useGameStore.getState().startCareerShift(),
+  completeCareerTask: () => useGameStore.getState().completeCareerTask(),
   setPlayer: (player: SimAppearance) => useGameStore.getState().setPlayer(player),
   setDream: (dream: string) => useGameStore.getState().setDream(dream),
   setCharacterSetup: (setup: CharacterSetup) => useGameStore.getState().setCharacterSetup(setup),

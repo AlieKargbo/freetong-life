@@ -2,12 +2,12 @@
 
 import BuildingPin from '../../../utils/BuildingPins';
 
-type Props = { position: [number, number, number] };
+type Props = { position: [number, number, number]; nameOverride?: string };
 
 export const LIGHTHOUSE_HEIGHT = 3.4;
 
 // Lighthouse: tapered white tower with red bands, gallery, glowing lantern and red cap.
-export default function Lighthouse({ position }: Props) {
+export default function Lighthouse({ position, nameOverride }: Props) {
   return (
     <group position={position}>
       {/* Tower */}
@@ -54,7 +54,7 @@ export default function Lighthouse({ position }: Props) {
         <meshStandardMaterial color="#334155" />
       </mesh>
 
-      <BuildingPin emoji="⚓" label="Lighthouse" height={LIGHTHOUSE_HEIGHT} />
+      <BuildingPin emoji="⚓" label="Lighthouse" height={LIGHTHOUSE_HEIGHT} nameOverride={nameOverride} />
     </group>
   );
 }

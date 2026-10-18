@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BriefcaseBusiness,
   Gem,
@@ -21,6 +20,8 @@ import PlayerStatusBar from '../Interior/PlayerStatusBar';
 import { AUTH_STORAGE_KEY, PLAYER_USERNAME_STORAGE_KEY, game, useGame } from '../../utils/Store';
 import useGameClock from '../../utils/useGameClock';
 import { formatGameTime } from '@/app/Game/clock';
+import { CAREER_JOBS, getCareerRank, getCareerShiftPay } from '@/app/Game/careers';
+import { skillLevelForXp } from '@/app/Game/skills';
 
 type GameHUDProps = {
   onOpenJobs?: () => void;
@@ -51,18 +52,85 @@ export default function GameHUD({
   avatar,
   showNeeds = true,
 }: GameHUDProps) {
-  const router = useRouter();
   const worldClock = useGameClock();
   const hasCafeJob = useGame((state) => state.hasCafeJob);
   const shiftsCompleted = useGame((state) => state.shiftsCompleted);
+  const careerProgress = useGame((state) => state.careerProgress);
+  const hustleXp = useGame((state) => state.skills.hustle);
   const firstDayComplete = useGame((state) => state.firstDayComplete);
   const skillGoalRewarded = useGame((state) => state.skillGoalRewarded);
   const interiorId = useGame((state) => state.interior?.id ?? null);
+  const needs = useGame((state) => state.needs);
+  const activeCareerJob = CAREER_JOBS.find((job) => job.id === careerProgress.activeJobId) ?? null;
+  const activeShiftJob = CAREER_JOBS.find((job) => job.id === careerProgress.activeShiftJobId) ?? null;
+  const careerStatusJob = activeShiftJob ?? activeCareerJob;
+  const careerStatusStats = careerStatusJob ? careerProgress.jobs[careerStatusJob.id] : null;
+  const careerStatusRank = careerStatusStats ? getCareerRank(careerStatusStats.shiftsCompleted) : null;
+  const careerStatusPay = careerStatusJob && careerStatusStats
+    ? getCareerShiftPay(careerStatusJob, careerStatusStats.shiftsCompleted, skillLevelForXp(hustleXp))
+    : 0;
   const messageNotification = useGame((state) => state.messageNotification);
   const [clean, setClean] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [panelTab, setPanelTab] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [reminderToast, setReminderToast] = useState<{
+    key: string;
+    title: string;
+    detail: string;
+  } | null>(null);
+
+  const hungerLow = needs.hunger <= 25;
+  const energyLow = needs.energy <= 25;
+  const bladderHigh = needs.bladder >= 75;
+  const reminder = useMemo(() => {
+    if (activeShiftJob) return {
+      key: `shift-${activeShiftJob.id}-${careerProgress.shiftTaskIndex}`,
+      title: 'Your shift is in progress',
+      detail: careerStatusJob?.tasks[careerProgress.shiftTaskIndex] ?? 'Open your career panel to finish the shift and collect your pay.',
+    };
+    if (hasCafeJob && shiftsCompleted === 0) return {
+      key: 'first-work-shift',
+      title: interiorId === 'ice-cream-cafe' ? 'Ready to start your shift?' : 'Time to go to work',
+      detail: interiorId === 'ice-cream-cafe' ? 'Open your career panel to start at the Ice Cream Cafe.' : 'Your Ice Cream Cafe job is waiting in Lumley.',
+    };
+    if (!hasCafeJob) return {
+      key: 'accept-first-job',
+      title: 'Ready to start earning?',
+      detail: 'Accept the Ice Cream Cafe job, then travel to Lumley to start your first shift.',
+    };
+    if (shiftsCompleted > 0 && !firstDayComplete) return {
+      key: 'first-day-purchase',
+      title: 'Your first-day reward is waiting',
+      detail: 'Buy an item to complete your first day and collect your SLE 5,000 bonus.',
+    };
+    if (hungerLow) return {
+      key: 'low-hunger',
+      title: 'You’re getting hungry',
+      detail: 'Find a restaurant and order a meal to restore hunger.',
+    };
+    if (energyLow) return {
+      key: 'low-energy',
+      title: 'Your energy is running low',
+      detail: 'Head home and get some rest.',
+    };
+    if (bladderHigh) return {
+      key: 'high-bladder',
+      title: 'Bathroom break reminder',
+      detail: 'Your bladder is getting full. Find a toilet soon.',
+    };
+    return null;
+  }, [activeShiftJob, careerProgress.shiftTaskIndex, careerStatusJob, hasCafeJob, shiftsCompleted, interiorId, firstDayComplete, hungerLow, energyLow, bladderHigh]);
+
+  useEffect(() => {
+    if (!reminder) {
+      setReminderToast(null);
+      return;
+    }
+    setReminderToast(reminder);
+    const timeout = window.setTimeout(() => setReminderToast((current) => current?.key === reminder.key ? null : current), 9000);
+    return () => window.clearTimeout(timeout);
+  }, [reminder]);
 
   useEffect(() => {
     game.setInteractionPromptsHidden(panelTab !== null);
@@ -75,17 +143,20 @@ export default function GameHUD({
     try {
       await fetch('/api/auth', { method: 'DELETE' });
     } catch {
-      // Clear the local session even if the server cannot be reached.
+      // The local game session is still cleared if the server is unreachable.
     }
     try {
       localStorage.removeItem(AUTH_STORAGE_KEY);
       localStorage.removeItem(PLAYER_USERNAME_STORAGE_KEY);
+      localStorage.removeItem('freetown-life-game-save-v2');
+      localStorage.removeItem('freetown-life-game-save-v1');
+      localStorage.removeItem('freetown-life-player-appearance');
+      localStorage.removeItem('freetown-life-player-choices');
+      sessionStorage.removeItem('freetown-life-multiplayer-id');
     } catch {
       // Continue to login even if browser storage is unavailable.
     }
-    game.setAuthenticated(false);
-    game.setPlayerUsername('');
-    router.replace('/login');
+    game.signOut();
   };
 
   // Home is active by default.
@@ -224,6 +295,22 @@ export default function GameHUD({
         </aside>
       )}
 
+      {!clean && reminderToast && (
+        <aside
+          role="status"
+          aria-live="polite"
+          className={`pointer-events-none absolute right-3 z-[105] w-[min(360px,calc(100%-24px))] sm:right-5 ${messageNotification ? 'top-[126px]' : 'top-[72px]'}`}
+        >
+          <div className="flex items-start gap-3 rounded-2xl border border-amber-100 bg-white/95 p-3 shadow-xl backdrop-blur-xl">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-amber-100 text-lg" aria-hidden="true">🔔</span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-extrabold text-slate-900">{reminderToast.title}</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-slate-600">{reminderToast.detail}</p>
+            </div>
+          </div>
+        </aside>
+      )}
+
       {/* Tasks on the left */}
       {!clean && (
         <aside className="pointer-events-auto absolute left-3 top-[100px] flex max-w-[min(290px,75vw)] flex-col gap-2 sm:left-5 sm:top-[136px]">
@@ -243,6 +330,27 @@ export default function GameHUD({
               </span>
             </span>
           </button>
+
+          {careerStatusJob && careerStatusStats && careerStatusRank && (
+            <button
+              onClick={openJobs}
+              className="flex items-center gap-3 rounded-full bg-white/95 px-3 py-2 text-left shadow-lg backdrop-blur transition hover:-translate-y-0.5 hover:bg-white sm:px-4"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-lg text-amber-800">
+                <BriefcaseBusiness size={18} />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-bold text-slate-800">
+                  {activeShiftJob ? `${careerStatusJob.employer} shift · ${careerProgress.shiftTaskIndex}/${careerStatusJob.tasks.length}` : `${careerStatusRank.title} · ${careerStatusJob.title}`}
+                </span>
+                <span className="block text-xs text-slate-500">
+                  {activeShiftJob
+                    ? careerStatusJob.tasks[careerProgress.shiftTaskIndex] ?? 'Final task complete · collect your pay'
+                    : `${careerStatusStats.shiftsCompleted} shifts · SLE ${moneyFormat.format(careerStatusPay)} per shift`}
+                </span>
+              </span>
+            </button>
+          )}
 
           <button
             onClick={() => onOpenPhone?.()}

@@ -4,10 +4,10 @@ import { Text } from '@react-three/drei';
 import { BuildingPins } from '@/app/components/zoned/BuildingImports';
 import {UrbanLot} from '@/app/components/zoned/BuildingImports';
 
-type Props = { position: [number, number, number] };
+type Props = { position: [number, number, number]; nameOverride?: string };
 export const PRESIDENTIAL_COMPOUND_HEIGHT = 2.1;
 
-export default function PresidentialCompound({ position }: Props) {
+export default function PresidentialCompound({ position, nameOverride }: Props) {
   return (
     <group position={position}>
       <UrbanLot width={7.8} depth={10.1} walkwayWidth={2} walkwayDepth={1.4} greenery={false}>
@@ -97,7 +97,7 @@ export default function PresidentialCompound({ position }: Props) {
           </group>
         ))}
 
-        <BuildingPins emoji="🏛️" label="Presidential Compound" height={PRESIDENTIAL_COMPOUND_HEIGHT} />
+      <BuildingPins emoji="🏛️" label="Presidential Compound" height={PRESIDENTIAL_COMPOUND_HEIGHT} nameOverride={nameOverride} />
       </UrbanLot>
     </group>
   );

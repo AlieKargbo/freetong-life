@@ -316,16 +316,18 @@ export default function Lumely({ roadConnectionZ }: LumelyProps = {}) {
 
             {/* Buildings in two rows, ordered from right to left */}
             <NightClub position={[cx + 16, 0, frontRowZ]} nameOverride="Chapter 1" />
-            <Gym position={[cx + 8, 0, frontRowZ]} />
-            <Hotel position={[cx, 0, frontRowZ]} />
-            <LifeguardTower position={[cx - 12, 0, frontRowZ]} />
-            <Lighthouse position={[cx - 8, 0, frontRowZ]} />
-            <TikiBar position={[cx - 16, 0, frontRowZ]} />
+            <Gym position={[cx + 8, 0, frontRowZ]} nameOverride="GYM" />
+            <Hotel position={[cx, 0, frontRowZ]} nameOverride="Pearl Hotel" />
+            <LifeguardTower position={[cx - 12, 0, frontRowZ]} nameOverride="Rescue Point" />
+            {/* <Lighthouse position={[cx - 8, 0, frontRowZ]} nameOverride="Cape Lighthouse" /> */}
+            <TikiBar position={[cx - 16, 0, frontRowZ]} nameOverride="Kololi Bar" />
             <GulfSquare position={[cx + 5, 0, backRowZ]} nameOverride="Gulf Club" />
-            <FishGrill position={[-0.5, 0, frontRowZ]} />
+            {/* Day’s Catch Grill */}
+            <FishGrill position={[-0.5, 0, frontRowZ]} nameOverride="Grill" />
+            {/* SurfShop nameOverride="Blue Fin Surf Co." */}
             <SurfShop position={[24.5, 0, frontRowZ]} />
-            <IceCreamCafe position={[cx - 12, 0, backRowZ]} />
-            <FamilyRestaurant position={[cx - 19, 0, backRowZ]} />
+            <IceCreamCafe position={[cx - 12, 0, backRowZ]} nameOverride="Gigibonta" />
+            <FamilyRestaurant position={[cx - 19, 0, backRowZ]} nameOverride="The Kona" cuisine="african" />
             <Trees points={lumelyTrees} seed={111} size={0.75} />
             {lumelyBillboardPoints.map((position, index) => (
                 <Billboard key={`lumely-billboard-${index}`} position={position} />

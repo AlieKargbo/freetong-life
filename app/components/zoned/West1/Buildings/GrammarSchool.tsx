@@ -35,7 +35,7 @@ export const info: BuildingInfo = {
 };
 
 
-type Props = { position: [number, number, number] };
+type Props = { position: [number, number, number]; nameOverride?: string };
 
 export const GRAMMAR_HEIGHT = 3;
 const W = 3.2;
@@ -51,7 +51,7 @@ const BELFRY_POSTS: [number, number][] = [
 ];
 
 // School 4, Grammar: cream classical building, columned portico and an open bell tower.
-export default function GrammarSchool({ position }: Props) {
+export default function GrammarSchool({ position, nameOverride }: Props) {
   const front = D / 2;
 
   return (
@@ -104,7 +104,7 @@ export default function GrammarSchool({ position }: Props) {
         <meshStandardMaterial color="#7c2d12" />
       </mesh>
 
-      <BuildingPins emoji={info.emoji} label={info.name} height={GRAMMAR_HEIGHT} info={info} />
+      <BuildingPins emoji={info.emoji} label={info.name} height={GRAMMAR_HEIGHT} nameOverride={nameOverride} info={info} />
     </group>
   );
 }

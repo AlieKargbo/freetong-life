@@ -66,10 +66,10 @@ export default function Leicesterpeak() {
                 <meshStandardMaterial color="#6b7280" />
             </mesh>
 
-            <LeicesterPeak position={[-4, 0, cz - 10]} />
-            <SugarLoaf position={[70, 0, cz - 10]} showPin />
-            <SugarLoaf position={[60, 0, cz - 10]} />
-            <SugarLoaf position={[77, 0, cz + 1]} />
+            <LeicesterPeak position={[-4, 0, cz - 10]} nameOverride="Leicester Peak Viewpoint" />
+            <SugarLoaf position={[70, 0, cz - 10]} nameOverride="Sugar Loaf Summit" showPin />
+            <SugarLoaf position={[60, 0, cz - 10]} nameOverride="Sugar Loaf Trail" />
+            <SugarLoaf position={[77, 0, cz + 1]} nameOverride="Sugar Loaf Lookout" />
             <EmbassyTwo position={[cx - 5.5, 0, cz + 5]} nameOverride="US Embassy Freetown" />
 
             <Trees points={vegetation} seed={888} size={0.95} />

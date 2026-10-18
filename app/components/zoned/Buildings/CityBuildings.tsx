@@ -6,6 +6,7 @@ import { useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { BuildingPins } from '@/app/components/zoned/BuildingImports';
 import UrbanLot from '../Utils/UrbanLot';
+import { createRestaurantInfo, restaurantInstanceId, type RestaurantCuisine } from './RestaurantInteriors';
 
 export type BuildingProps = {
   position: [number, number, number];
@@ -185,7 +186,16 @@ export function Bank({ position, nameOverride }: NamedBuildingProps) {
 
 export const FAMILY_RESTAURANT_HEIGHT = 3.3;
 
-export function FamilyRestaurant({ position, nameOverride }: NamedBuildingProps) {
+export function FamilyRestaurant({ position, nameOverride, cuisine = 'sierra-leonean' }: NamedBuildingProps & { cuisine?: RestaurantCuisine }) {
+  const restaurantName = nameOverride ?? 'Family Restaurant';
+  const restaurantInfo = createRestaurantInfo({
+    id: restaurantInstanceId('family-restaurant', restaurantName, position.map((part) => Math.round(part * 100)).join('-')),
+    name: restaurantName,
+    area: 'Freetown',
+    emoji: '🍽️',
+    cuisine,
+  });
+
   return (
     <group position={position}>
       <UrbanLot
@@ -258,14 +268,15 @@ export function FamilyRestaurant({ position, nameOverride }: NamedBuildingProps)
           anchorX="center"
           anchorY="middle"
         >
-          {nameOverride ?? 'LOCAL RESTAURANT'}
+          {restaurantName.toUpperCase()}
         </Text>
 
         <BuildingPins
           emoji="🍽️"
           label="Family Restaurant"
           height={FAMILY_RESTAURANT_HEIGHT}
-          nameOverride={nameOverride}
+          nameOverride={restaurantName}
+          info={restaurantInfo}
         />
       </UrbanLot>
     </group>
@@ -646,6 +657,7 @@ type HousingProps = BuildingProps & {
   level: HousingLevel;
   label?: string;
   showPin?: boolean;
+  nameOverride?: string;
 };
 
 export function HousingBuilding({
@@ -653,6 +665,7 @@ export function HousingBuilding({
   level,
   label,
   showPin = true,
+  nameOverride,
 }: HousingProps) {
   const W = 3.2;
   const H = 2;
@@ -768,32 +781,35 @@ export function HousingBuilding({
           emoji={style.emoji}
           label={label ?? `${level} Income House`}
           height={H + 0.3}
+          nameOverride={nameOverride}
         />
       )}
     </group>
   );
 }
 
-type HousingInstanceProps = BuildingProps & { showPin?: boolean };
+type HousingInstanceProps = BuildingProps & { showPin?: boolean; nameOverride?: string };
 
-export function LowIncomeHouseOne({ position, showPin }: HousingInstanceProps) {
+export function LowIncomeHouseOne({ position, showPin, nameOverride }: HousingInstanceProps) {
   return (
     <HousingBuilding
       position={position}
       level="low"
       label="Low Income House"
       showPin={showPin}
+      nameOverride={nameOverride}
     />
   );
 }
 
-export function LowIncomeHouseTwo({ position, showPin }: HousingInstanceProps) {
+export function LowIncomeHouseTwo({ position, showPin, nameOverride }: HousingInstanceProps) {
   return (
     <HousingBuilding
       position={position}
       level="low"
       label="Low Income House"
       showPin={showPin}
+      nameOverride={nameOverride}
     />
   );
 }

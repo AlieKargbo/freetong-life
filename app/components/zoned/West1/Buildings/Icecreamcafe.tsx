@@ -12,6 +12,7 @@ export const info: BuildingInfo = {
   banner: { badge: 'NEW', line: '🍦 Buy 2 scoops, get 1 free' },
   activities: [{ emoji: '🍦', label: 'Order a cone' }, { emoji: '🥤', label: 'Milkshake bar' }, { emoji: '🍨', label: 'Sundae special' }, { emoji: '🧇', label: 'Waffle corner' }, { emoji: '🎂', label: 'Birthday party' }],
   shops: true,
+  cuisine: 'dessert',
   interior: {
     size: [8, 7],
     floor: ['#fbcfe8', '#fdf2f8'],
@@ -35,14 +36,14 @@ export const info: BuildingInfo = {
   },
 };
 
-type Props = { position: [number, number, number] };
+type Props = { position: [number, number, number]; nameOverride?: string };
 
 export const ICE_CREAM_HEIGHT = 3.1;
 const BODY_H = 1.1;
 const ROOF_Y = BODY_H + 0.06; // top of the roof trim
 
 // Ice cream cafe: pink shop with a striped awning, serving window and a giant cone on the roof.
-export default function IceCreamCafe({ position }: Props) {
+export default function IceCreamCafe({ position, nameOverride }: Props) {
   return (
     <group position={position}>
       {/* Body + roof trim */}
@@ -94,7 +95,7 @@ export default function IceCreamCafe({ position }: Props) {
       </mesh>
 
       {/* Icon on the building */}
-      <BuildingPin emoji={info.emoji} label={info.name} height={ICE_CREAM_HEIGHT} info={info} />
+      <BuildingPin emoji={info.emoji} label={info.name} height={ICE_CREAM_HEIGHT} nameOverride={nameOverride} info={info} />
     </group>
   );
 }

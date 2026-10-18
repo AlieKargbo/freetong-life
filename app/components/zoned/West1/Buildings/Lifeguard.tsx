@@ -30,14 +30,14 @@ export const info: BuildingInfo = {
 };
 
 
-type Props = { position: [number, number, number] };
+type Props = { position: [number, number, number]; nameOverride?: string };
 
 export const LIFEGUARD_HEIGHT = 2.2;
 const LEG = 0.35;
 const RUNGS = [0.15, 0.3, 0.45, 0.6];
 
 // Lifeguard tower: wooden stilts and ladder, white cabin with a red band, red roof and flag.
-export default function LifeguardTower({ position }: Props) {
+export default function LifeguardTower({ position, nameOverride }: Props) {
   return (
     <group position={position}>
       {/* Stilts */}
@@ -103,7 +103,7 @@ export default function LifeguardTower({ position }: Props) {
         </mesh>
       ))}
 
-      <BuildingPin emoji={info.emoji} label={info.name} height={LIFEGUARD_HEIGHT} info={info} />
+      <BuildingPin emoji={info.emoji} label={info.name} height={LIFEGUARD_HEIGHT} nameOverride={nameOverride} info={info} />
     </group>
   );
 }

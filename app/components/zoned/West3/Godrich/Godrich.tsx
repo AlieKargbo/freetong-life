@@ -71,9 +71,9 @@ export default function Godrich() {
                 <meshStandardMaterial color="#6b7280" />
             </mesh>
 
-            <Church position={[50, 0, 15]} />
+            <Church position={[50, 0, 15]} nameOverride="Good Shepherd Chapel" />
             <SecondarySchool position={[75, 0, 26]} nameOverride="Hill Valley Academy" />
-            <Church position={[60, 0, 25]} />
+            
             <FineDiningRestaurant position={[60, 0, 25]} nameOverride="LOR" />
 
             {/* Beach along the front */}

@@ -3,6 +3,7 @@
 import { Text } from '@react-three/drei';
 import BuildingPin from '../../../utils/BuildingPins';
 import type { BuildingInfo } from '../../../utils/Info';
+import { FISH_GRILL_INTERIOR } from '../../Buildings/RestaurantInteriors';
 
 export const info: BuildingInfo = {
   id: 'fish-grill',
@@ -13,31 +14,12 @@ export const info: BuildingInfo = {
   banner: { badge: 'FRESH', line: '🐟 Straight off the boats' },
   activities: [{ emoji: '🐟', label: 'Grilled tilapia' }, { emoji: '🍢', label: 'Spicy suya' }, { emoji: '🥤', label: 'Cold drinks' }, { emoji: '🏖️', label: 'Beach tables' }],
   shops: true,
-  interior: {
-    size: [7, 6],
-    floor: ['#9a3412', '#7c2d12'],
-    wall: '#c2410c',
-    ground: '#f5deb3',
-    furniture: [
-      { type: 'counter', at: [0, -2.4], color: '#9a3412', size: [3.4, 0.7] },
-      { type: 'machine', at: [-2.4, -2.2], color: '#1f2937', size: [1, 1] },
-      { type: 'crate', at: [2.6, -1.6] },
-      { type: 'crate', at: [2.6, -0.9] },
-      { type: 'crate', at: [2.6, -0.2] },
-      { type: 'table', at: [-1.8, 1.1], size: [1.2, 0.9] },
-      { type: 'chair', at: [-1.8, 0.2] },
-      { type: 'chair', at: [-1.8, 2], rot: Math.PI },
-      { type: 'table', at: [1.8, 1.1], size: [1.2, 0.9] },
-      { type: 'chair', at: [1.8, 0.2] },
-      { type: 'chair', at: [1.8, 2], rot: Math.PI },
-      { type: 'plant', at: [2.9, 2.3] },
-      { type: 'lamp', at: [-2.9, 0.8] },
-    ],
-  },
+  cuisine: 'sierra-leonean',
+  interior: FISH_GRILL_INTERIOR,
 };
 
 
-type Props = { position: [number, number, number] };
+type Props = { position: [number, number, number]; nameOverride?: string };
 
 export const FISH_GRILL_HEIGHT = 2.1;
 const W = 1.6;
@@ -52,7 +34,7 @@ const SMOKE: { p: [number, number, number]; r: number }[] = [
 
 // Fish grill: brick-red shack with a tin roof, chimney smoke, serving window,
 // a glowing charcoal grill and a table under a beach umbrella.
-export default function FishGrill({ position }: Props) {
+export default function FishGrill({ position, nameOverride }: Props) {
   const front = D / 2;
 
   return (
@@ -122,7 +104,7 @@ export default function FishGrill({ position }: Props) {
         <meshStandardMaterial color="#ef4444" />
       </mesh>
 
-      <BuildingPin emoji={info.emoji} label={info.name} height={FISH_GRILL_HEIGHT} info={info} />
+      <BuildingPin emoji={info.emoji} label={info.name} height={FISH_GRILL_HEIGHT} nameOverride={nameOverride} info={info} />
     </group>
   );
 }

@@ -3,14 +3,14 @@ import { BuildingPins } from '@/app/components/zoned/BuildingImports';
 import {UrbanLot} from '@/app/components/zoned/BuildingImports';
 import WindowGrid from './WindowGrid';
 
-type Props = { position: [number, number, number] };
+type Props = { position: [number, number, number]; nameOverride?: string };
 
 export const CHURCH_HEIGHT = 3.65;
 const TILT = 0.7; // roof pitch in radians
 
 // Church: white nave with a pitched slate roof, a front bell tower with a spire and a cross,
 // a round rose window and amber stained-glass windows along the sides.
-export default function Church({ position }: Props) {
+export default function Church({ position, nameOverride }: Props) {
   return (
     <group position={position}>
       {/* Consistent city-style building lot: pale concrete, curb edging, entrance walk and landscaping. */}
@@ -103,7 +103,7 @@ export default function Church({ position }: Props) {
         <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.7} />
       </mesh>
 
-      <BuildingPins emoji="⛪" label="Church" height={CHURCH_HEIGHT} />
+      <BuildingPins emoji="⛪" label="Church" height={CHURCH_HEIGHT} nameOverride={nameOverride} />
     </group>
   );
 }

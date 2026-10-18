@@ -1,11 +1,9 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Html } from '@react-three/drei';
-import { useBuildingArea, useBuildingDisplayName } from './BuildingNameScope';
 
-import { game } from './Store';
+import { game, useGame } from './Store';
 import type { BuildingInfo } from './Info';
 
 type Props = {
@@ -20,15 +18,11 @@ type Props = {
 const LIFT = 0.9; // gap between the building's top and the pin
 const ICON = 36; // px, collapsed circle
 const EXPANDED_MAX = 240; // px, max width of the expanded pill
-const NAME_ZOOM = 24; // camera closer than this => the name is always shown
-const CHECK_EVERY = 0.25; // seconds between zoom checks
-
-// Put one inside a building's <group>. Collapsed = round icon. Expanded = pill that grows to the
-// right with the building's name. Expands on hover, on tap/click (toggle), or when zoomed in.
+// Put one inside a building's <group>. The name expands on hover or selection so nearby labels
+// don't cover one another when the camera is zoomed in.
 export default function BuildingPin({ emoji, label, height, nameOverride, onClick, info}: Props) {
-  const scopedName = useBuildingDisplayName(label);
-  const displayName = nameOverride ?? scopedName;
-  const area = useBuildingArea();
+  const displayName = nameOverride ?? label;
+  const area = info?.area ?? 'Freetown';
   const generatedId = useId();
   const buildingInfo: BuildingInfo = info
     ? { ...info, name: displayName }
@@ -49,20 +43,18 @@ export default function BuildingPin({ emoji, label, height, nameOverride, onClic
       };
   const [hovered, setHovered] = useState(false);
   const [pinned, setPinned] = useState(false);
-  const [zoomedIn, setZoomedIn] = useState(false);
+  const selected = useGame((state) => state.popup?.id === buildingInfo.id);
+  const pinRef = useRef<HTMLButtonElement>(null);
+  const expanded = hovered || pinned || selected;
 
-  const camera = useThree((s) => s.camera);
-  const controls = useThree((s) => s.controls) as { target: unknown } | null;
-  const clock = useRef(0);
-
-  useFrame((_, dt) => {
-    clock.current += dt;
-    if (clock.current < CHECK_EVERY || !controls) return;
-    clock.current = 0;
-    setZoomedIn(camera.position.distanceTo(controls.target as never) < NAME_ZOOM);
-  });
-
-  const expanded = hovered || pinned || zoomedIn;
+  useEffect(() => {
+    if (!pinned) return;
+    const closeWhenOutside = (event: PointerEvent) => {
+      if (!pinRef.current?.contains(event.target as Node)) setPinned(false);
+    };
+    document.addEventListener('pointerdown', closeWhenOutside);
+    return () => document.removeEventListener('pointerdown', closeWhenOutside);
+  }, [pinned]);
 
   const handleClick = () => {
     game.openPopup(buildingInfo);
@@ -70,18 +62,26 @@ export default function BuildingPin({ emoji, label, height, nameOverride, onClic
   };
   
   return (
-    <Html position={[0, height + LIFT, 0]} center zIndexRange={[20, 0]}>
+    <Html position={[0, height + LIFT, 0]} center zIndexRange={selected || hovered || pinned ? [100, 100] : [20, 0]}>
       {/* Fixed-size anchor so the icon stays centred over the building while the pill grows */}
       <div className="relative" style={{ width: ICON, height: ICON }}>
-        <div
+        <button
+          ref={pinRef}
+          type="button"
+          aria-label={`Open ${displayName}`}
+          aria-pressed={selected}
           onPointerEnter={() => setHovered(true)}
           onPointerLeave={() => setHovered(false)}
           onClick={() => {
             setPinned((p) => !p);
             handleClick();
           }}
-          className={`absolute left-0 top-0 flex cursor-pointer select-none items-center overflow-hidden rounded-full bg-white shadow-lg ring-2 transition-[max-width] duration-300 ease-out ${
-            hovered || pinned ? 'ring-yellow-400' : 'ring-white'
+          className={`absolute left-0 top-0 flex cursor-pointer select-none items-center overflow-hidden rounded-full border-0 bg-white p-0 text-left shadow-lg ring-2 transition-all duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 ${
+            selected
+              ? 'z-10 scale-110 ring-4 ring-emerald-500 shadow-emerald-950/30'
+              : hovered || pinned
+                ? 'ring-yellow-400'
+                : 'ring-white'
           }`}
           style={{ height: ICON, maxWidth: expanded ? EXPANDED_MAX : ICON }}
         >
@@ -95,7 +95,7 @@ export default function BuildingPin({ emoji, label, height, nameOverride, onClic
           >
             {displayName}
           </span>
-        </div>
+        </button>
       </div>
     </Html>
   );

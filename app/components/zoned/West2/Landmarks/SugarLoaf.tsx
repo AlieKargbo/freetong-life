@@ -13,6 +13,7 @@ import type { BuildingInfo } from '../../../utils/Info';
 type V3 = [number, number, number];
 type Props = {
   position: [number, number, number];
+  nameOverride?: string;
   showPin?: boolean;
 };
 
@@ -108,7 +109,7 @@ export const SUGAR_LOAF_INFO: BuildingInfo = {
 
 // Sugar Loaf: a steep forested dome with a bare granite top, a Sierra Leone flag on the summit,
 // boulders, a base camp with tents and a campfire, and clouds drifting past.
-export default function SugarLoaf({ position, showPin = false }: Props) {
+export default function SugarLoaf({ position, showPin = false, nameOverride }: Props) {
   const m = useMemo(
     () =>
       buildMountain({
@@ -201,7 +202,7 @@ export default function SugarLoaf({ position, showPin = false }: Props) {
         <BuildingPin
           emoji="🏔️"
           label="Sugar Loaf"
-          nameOverride="Sugar Loaf Memorial"
+          nameOverride={nameOverride ?? "Sugar Loaf Memorial"}
           height={SUGAR_LOAF_HEIGHT}
           info={SUGAR_LOAF_INFO}
         />

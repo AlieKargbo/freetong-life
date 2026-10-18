@@ -1,6 +1,8 @@
 export const REAL_WORLD_MS_PER_GAME_DAY = 10 * 60 * 1000;
 const GAME_DAY_MS = 24 * 60 * 60 * 1000;
-const GAME_CLOCK_EPOCH = Date.UTC(2026, 0, 1, 6, 0, 0);
+// Ten real minutes cover one 24-hour game day: 144 in-game seconds per real second.
+export const GAME_TIME_SCALE = GAME_DAY_MS / REAL_WORLD_MS_PER_GAME_DAY;
+const GAME_START_HOUR = 12;
 
 export type GameClock = {
   hour: number;
@@ -12,11 +14,11 @@ export type GameClock = {
   isDay: boolean;
 };
 
-export function getGameClock(now = Date.now()): GameClock {
-  const elapsedRealMs = Math.max(0, now - GAME_CLOCK_EPOCH);
-  const elapsedGameMs = elapsedRealMs * (GAME_DAY_MS / REAL_WORLD_MS_PER_GAME_DAY);
+export function getGameClock(now = Date.now(), startedAt = now): GameClock {
+  const elapsedRealMs = Math.max(0, now - startedAt);
+  const elapsedGameMs = elapsedRealMs * GAME_TIME_SCALE;
   const gameDayIndex = Math.floor(elapsedGameMs / GAME_DAY_MS);
-  const timeOfDayMs = elapsedGameMs % GAME_DAY_MS;
+  const timeOfDayMs = (GAME_START_HOUR * 60 * 60 * 1000 + elapsedGameMs) % GAME_DAY_MS;
   const hourOfDay = timeOfDayMs / (60 * 60 * 1000);
   const hour = Math.floor(hourOfDay);
   const minute = Math.floor((timeOfDayMs % (60 * 60 * 1000)) / (60 * 1000));

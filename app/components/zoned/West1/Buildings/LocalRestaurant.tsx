@@ -3,12 +3,28 @@
 import { Text } from '@react-three/drei';
 import { BuildingPins } from '@/app/components/zoned/BuildingImports';
 import {UrbanLot} from '@/app/components/zoned/BuildingImports';
+import { createRestaurantInfo, restaurantInstanceId } from '../../Buildings/RestaurantInteriors';
 
 
-type Props = { position: [number, number, number] };
+type Props = { position: [number, number, number]; nameOverride?: string };
 export const LOCAL_RESTAURANT_HEIGHT = 3.3;
 
-export default function LocalRestaurant({ position }: Props) {
+export default function LocalRestaurant({ position, nameOverride }: Props) {
+  const restaurantName = nameOverride ?? 'Local Restaurant';
+  const restaurantInfo = createRestaurantInfo({
+    id: restaurantInstanceId('local-restaurant', restaurantName, position.map((part) => Math.round(part * 100)).join('-')),
+    name: restaurantName,
+    area: 'Freetown',
+    emoji: '🍲',
+    cuisine: 'sierra-leonean',
+    tagline: 'A neighbourhood spot for everyday Sierra Leonean meals.',
+    activities: [
+      { emoji: '🥬', label: 'Cassava leaf stew' },
+      { emoji: '🍚', label: 'Jollof rice' },
+      { emoji: '🍲', label: 'Groundnut soup' },
+      { emoji: '🐟', label: 'Pepper fish' },
+    ],
+  });
   return (
     <group position={position}>
       <UrbanLot width={7.8} depth={8.2} walkwayWidth={2.2} walkwayDepth={1.7}>
@@ -57,9 +73,9 @@ export default function LocalRestaurant({ position }: Props) {
           <meshStandardMaterial color="#0f172a" />
         </mesh>
         <Text position={[0, 2.95, 2.1]} fontSize={0.18} color="#f8fafc" anchorX="center" anchorY="middle">
-          LOCAL RESTAURANT
+          {restaurantName.toUpperCase()}
         </Text>
-        <BuildingPins emoji="🍲" label="Local Restaurant" height={3.3} />
+        <BuildingPins emoji="🍲" label="Local Restaurant" height={3.3} nameOverride={restaurantName} info={restaurantInfo} />
       </UrbanLot>
     </group>
   );
