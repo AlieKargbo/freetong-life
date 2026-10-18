@@ -30,9 +30,9 @@ const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFracti
 const AVATARS = ['🧑🏿', '👩🏾', '👨🏽', '🧑🏾'];
 
 const DEFAULT_CHIPS: Chip[] = [
-  { icon: '🏛️', label: 'Gov@Franka' },
-  { icon: '🌊', label: 'Sea Plots' },
-  { icon: '🏠', label: '400 homes' },
+  { icon: '🏛️', label: 'Mayor @Aki-Sawyerr' },
+  // { icon: '🌊', label: 'Sea Plots' },
+  // { icon: '🏠', label: '400 homes' },
 ];
 
 /* Small stroke icons for the social buttons */
