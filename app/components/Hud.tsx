@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { CURRENCY, useGame } from './utils/Store';
 import GameHUD from './zoned/Utils/GameHUD';
 type Chip = { icon: string; label: string; onClick?: () => void };
@@ -27,7 +27,6 @@ type Props = {
 };
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
-
 const AVATARS = ['🧑🏿', '👩🏾', '👨🏽', '🧑🏾'];
 
 const DEFAULT_CHIPS: Chip[] = [
@@ -62,8 +61,8 @@ const SOCIALS: { label: string; icon: ReactNode }[] = [
 ];
 
 export default function Hud({
-  online = 67_000,
-  visits = 26_761_000,
+  online,
+  visits,
   headline = '🍲 Food subsidy is law this week',
   chips = DEFAULT_CHIPS,
   signupHref = '/signup',
@@ -82,6 +81,33 @@ export default function Hud({
   showNeeds,
 }: Props) {
   const storedMoney = useGame((state) => state.money);
+  const [liveStats, setLiveStats] = useState<{ online: number | null; visits: number | null }>({ online: null, visits: null });
+
+  useEffect(() => {
+    let active = true;
+    const loadStats = async () => {
+      try {
+        const response = await fetch('/api/site-stats', { cache: 'no-store' });
+        if (!response.ok) return;
+        const data: unknown = await response.json();
+        if (!data || typeof data !== 'object') return;
+        const result = data as Record<string, unknown>;
+        if (active) setLiveStats({
+          online: Number.isSafeInteger(result.online) && Number(result.online) >= 0 ? Number(result.online) : null,
+          visits: Number.isSafeInteger(result.visits) && Number(result.visits) >= 0 ? Number(result.visits) : null,
+        });
+      } catch {
+        // Stats are optional while the realtime service is unavailable.
+      }
+    };
+
+    void loadStats();
+    const interval = window.setInterval(() => { if (active) void loadStats(); }, 30_000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, []);
+
+  const shownOnline = online ?? liveStats.online;
+  const shownVisits = visits ?? liveStats.visits;
 
   if (authenticated) {
     return (
@@ -113,16 +139,12 @@ export default function Hud({
             <span className="hidden items-center gap-1.5 text-sm font-semibold text-emerald-600 sm:flex">
               <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
               
-              {/* {compact.format(online)}  */}
-              
-              online
+              {shownOnline === null ? 'online' : `${compact.format(shownOnline)} online`}
             </span>
             <span className="hidden items-center gap-1.5 text-sm font-semibold text-slate-500 md:flex">
               👀 
               
-              {/* {compact.format(visits)} */}
-              
-               visits
+              {shownVisits === null ? 'visits' : `${compact.format(shownVisits)} visits`}
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
@@ -172,7 +194,7 @@ export default function Hud({
                 
                 {/* {compact.format(online)}  */}
                 
-                Freetonians</span> playing right now · free
+                {shownOnline === null ? 'Freetonians' : compact.format(shownOnline)}</span> playing right now · free
             </p>
           </div>
 

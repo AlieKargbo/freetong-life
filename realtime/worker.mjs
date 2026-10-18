@@ -164,6 +164,12 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === '/health') return Response.json({ status: 'ok' });
     if (url.pathname === '/_internal/db') return handleInternalDatabaseRequest(request, env);
+    if (url.pathname === '/stats') {
+      if (request.method !== 'GET') return Response.json({ error: 'Method not allowed.' }, { status: 405 });
+      const room = env.REALTIME_ROOM.getByName('freetown-life-global-room');
+      const result = await room.fetch(new Request('https://room/_stats'));
+      return Response.json(await result.json(), { headers: { 'Cache-Control': 'no-store' } });
+    }
     if (url.pathname === '/db-health') {
       const token = env.DB_HEALTH_TOKEN;
       if (!token || request.headers.get('Authorization') !== `Bearer ${token}`) {
@@ -205,6 +211,10 @@ export class RealtimeRoom extends DurableObject {
   }
 
   async fetch(request) {
+    if (new URL(request.url).pathname === '/_stats') {
+      const online = [...this.sessions.values()].filter((session) => session.player).length;
+      return Response.json({ online });
+    }
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     this.ctx.acceptWebSocket(server);
