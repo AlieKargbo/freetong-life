@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { game } from '../../utils/Store';
+import { WELCOME_TOUR_COMPLETED_KEY, WELCOME_TOUR_PENDING_KEY, game, removeMigratedLocalStorage } from '../../utils/Store';
 
 type WelcomeTourProps = {
   onClose: () => void;
@@ -57,8 +57,8 @@ export default function WelcomeTour({ onClose }: WelcomeTourProps) {
 
   function finish() {
     try {
-      localStorage.setItem('lagos-life-welcome-tour-completed', 'true');
-      localStorage.removeItem('lagos-life-welcome-tour-pending');
+      localStorage.setItem(WELCOME_TOUR_COMPLETED_KEY, 'true');
+      removeMigratedLocalStorage(WELCOME_TOUR_PENDING_KEY);
     } catch {
       // The tour still works when browser storage is unavailable.
     }

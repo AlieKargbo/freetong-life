@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AUTH_STORAGE_KEY, game, type SavedGameProgress } from './Store';
+import { AUTH_STORAGE_KEY, game, getMigratedLocalStorage, type SavedGameProgress } from './Store';
 
 const SAVE_KEY = 'freetown-life-game-save-v2';
 const LEGACY_SAVE_KEY = 'freetown-life-game-save-v1';
@@ -30,7 +30,7 @@ export default function GamePersistence({ onReady }: { onReady?: () => void }) {
       } catch {
         // Keep playing if browser storage is full or unavailable.
       }
-      if (localStorage.getItem(AUTH_STORAGE_KEY) !== 'true') return;
+      if (getMigratedLocalStorage(AUTH_STORAGE_KEY) !== 'true') return;
       try {
         await fetch('/api/player/save', {
           method: 'PUT',
@@ -87,7 +87,7 @@ export default function GamePersistence({ onReady }: { onReady?: () => void }) {
 
     const hydrateFromDatabase = async () => {
       try {
-        const signedIn = localStorage.getItem(AUTH_STORAGE_KEY) === 'true';
+        const signedIn = getMigratedLocalStorage(AUTH_STORAGE_KEY) === 'true';
         if (signedIn) {
           const response = await fetch('/api/player/save', { cache: 'no-store' });
           if (response.ok) {

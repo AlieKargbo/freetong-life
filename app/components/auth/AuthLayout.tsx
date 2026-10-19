@@ -176,14 +176,14 @@ export default function AuthPage({ mode }: AuthPageProps) {
                     </div>
 
                     <h1 className="flex items-center justify-center gap-2 text-4xl font-black tracking-tight text-[#182033] sm:text-5xl">
-                        Freetong Life
+                        Freetown Life
                         <span className="relative top-1 inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-[#182033] px-1.5 text-[11px] font-extrabold text-white sm:h-9 sm:min-w-9">
                             18+
                         </span>
                     </h1>
 
                     <p className="mt-2 text-base text-[#63738e] sm:text-lg">
-                        Live your Freetong story with real people.
+                        Live your Freetown story with real people.
                     </p>
                 </header>
 
@@ -274,7 +274,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
                                     </div>
 
                                     <p className="mt-2 text-sm leading-5 text-[#63738e]">
-                                        This is your Sim&apos;s name in Freetong Life.
+                                        This is your Sim&apos;s name in Freetown Life.
                                     </p>
                                 </div>
                             </>
@@ -361,7 +361,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
                                         className={`${inputClass} text-[#63738e]`}
                                     />
                                     <p className="mt-2 text-sm leading-5 text-[#63738e]">
-                                        Lagos Life is intended for adults aged 18 and over.
+                                        Freetown Life is intended for adults aged 18 and over.
                                     </p>
                                 </div>
                             </>
@@ -381,7 +381,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
                             disabled={submitting}
                             className="w-full rounded-full bg-[#16834a] px-5 py-4 text-base font-bold text-white shadow-md shadow-emerald-900/10 transition hover:bg-[#116d3d] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/25 active:scale-[0.99] disabled:cursor-wait disabled:opacity-70"
                         >
-                            {submitting ? 'Please wait…' : isSignup ? 'Create your account' : 'Log in to Freetong Life'}
+                            {submitting ? 'Please wait…' : isSignup ? 'Create your account' : 'Log in to Freetown Life'}
                         </button>
 
                         <p className="pt-1 text-center text-xs leading-5 text-[#8490a5]">
@@ -391,7 +391,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
                 </section>
 
                 <footer className="px-3 pb-4 pt-6 text-center text-xs leading-5 text-[#687b94]">
-                    By continuing, you agree to follow the community rules of Lagos Life.
+                    By continuing, you agree to follow the community rules of Freetown Life.
                     <br />
                     Your city. Your story.
                 </footer>

@@ -253,7 +253,7 @@ export default function Aside({
                 {step === 3 && (
                     <section className="space-y-5">
                         <p className="text-center text-sm text-slate-500">
-                            Every Lagosian is born into something. What was{' '}
+                            Every Freetonian is born into something. What was{' '}
                             {appearance.name || '@paaka'} born into?
                         </p>
 
@@ -263,10 +263,10 @@ export default function Aside({
                                 emoji: '👶🏿💰',
                                 tagline: 'Papa na Big Man en Sabi people den.',
                                 benefits: [
-                                    'Fully furnished Lekki flat — Daddy pays the rent',
+                                    'Fully furnished Hill Station flat — Daddy pays the rent',
                                     'Your own car (just buy fuel)',
                                     "Branch Manager at Daddy's friend's bank, from day one",
-                                    'SLE500,000 pocket money',
+                                    'SLE 500,000 pocket money',
                                 ],
                             },
                             {
@@ -274,7 +274,7 @@ export default function Aside({
                                 emoji: '🏦',
                                 tagline: 'Self-made hits different.',
                                 benefits: [
-                                    'SLE60,000 Fighter loan to start — repay ₦12,000 every week',
+                                    'SLE 60,000 Fighter loan to start — repay SLE 12,000 every week',
                                     'Hustle skill starts at 2',
                                     'You learn every skill 25% faster',
                                     'Start in Malama or Congo Cross and work your way to HillStation',
@@ -356,7 +356,7 @@ export default function Aside({
                                         </div>
                                         <p className="mt-1 text-sm text-slate-500">{option.area} · {option.description}</p>
                                         <p className="mt-2 text-xs font-semibold text-slate-600">
-                                            Start SLE{option.startingMoney.toLocaleString('en-NG')} · Rent SLE{option.weeklyRent.toLocaleString('en-NG')} / week
+                                            Start SLE {option.startingMoney.toLocaleString('en-SL')} · Rent SLE {option.weeklyRent.toLocaleString('en-SL')} / week
                                         </p>
                                     </button>
                                 );

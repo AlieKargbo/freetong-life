@@ -17,7 +17,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import PlayerStatusBar from '../Interior/PlayerStatusBar';
-import { AUTH_STORAGE_KEY, PLAYER_USERNAME_STORAGE_KEY, game, useGame } from '../../utils/Store';
+import { AUTH_STORAGE_KEY, PLAYER_USERNAME_STORAGE_KEY, game, removeMigratedLocalStorage, useGame } from '../../utils/Store';
 import useGameClock from '../../utils/useGameClock';
 import { formatGameTime } from '@/app/Game/clock';
 import { CAREER_JOBS, getCareerRank, getCareerShiftPay } from '@/app/Game/careers';
@@ -146,7 +146,7 @@ export default function GameHUD({
       // The local game session is still cleared if the server is unreachable.
     }
     try {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
+      removeMigratedLocalStorage(AUTH_STORAGE_KEY);
       localStorage.removeItem(PLAYER_USERNAME_STORAGE_KEY);
       localStorage.removeItem('freetown-life-game-save-v2');
       localStorage.removeItem('freetown-life-game-save-v1');
@@ -202,7 +202,7 @@ export default function GameHUD({
         ? 'Complete your first shift'
         : 'Buy your first item';
   const firstDayDetail = firstDayComplete && !skillGoalRewarded
-    ? 'Earn a SLE5,000 skill goal reward'
+    ? 'Earn a SLE 5,000 skill goal reward'
     : firstDayComplete
       ? 'First-day and skill rewards earned'
     : !hasCafeJob
@@ -364,7 +364,7 @@ export default function GameHUD({
                 Daily gem hunt
               </span>
               <span className="block text-xs text-slate-500">
-                {gemCount} found · next prize ₦
+                {gemCount} found · next prize SLE
                 {moneyFormat.format(nextGemPrize)}
               </span>
             </span>
@@ -414,7 +414,7 @@ export default function GameHUD({
           <nav className="pointer-events-auto absolute left-4 top-[72px] w-64 overflow-hidden rounded-2xl border border-white/70 bg-white/95 p-2 shadow-2xl backdrop-blur-xl">
             <div className="px-3 py-2">
               <p className="text-sm font-extrabold text-slate-800">
-                Lagos Life
+                Freetown Life
               </p>
               <p className="text-xs text-slate-500">
                 Game menu

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import CharacterCreator, {
   type PlayerChoices,
 } from './CharacterCreator';
-import { game } from '../utils/Store';
+import { WELCOME_TOUR_COMPLETED_KEY, WELCOME_TOUR_PENDING_KEY, game, removeMigratedLocalStorage } from '../utils/Store';
 import { createPlayerHomeInfo } from '../zoned/Interior/playerHomeInfo';
 import { HOMES } from './CharacterData';
 
@@ -34,11 +34,8 @@ export default function CharacterCreationPage() {
         'freetown-life-player-choices',
         JSON.stringify(choices),
       );
-      localStorage.setItem(
-        'lagos-life-welcome-tour-pending',
-        'true',
-      );
-      localStorage.removeItem('lagos-life-welcome-tour-completed');
+      localStorage.setItem(WELCOME_TOUR_PENDING_KEY, 'true');
+      removeMigratedLocalStorage(WELCOME_TOUR_COMPLETED_KEY);
     } catch {
       // Continue into the game if storage is unavailable.
     }
