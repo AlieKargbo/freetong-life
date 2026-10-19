@@ -3,11 +3,11 @@
 import type { ZoneConfig } from '../../../WorldCanvas';
 
 export const zone: ZoneConfig = {
-  id: 'ikoyi',
+  id: 'freetown',
   c: [-4, 15],
   size: [14, 9],
   color: '#d8dbc9',
-  label: { text: 'EKO ATLANTIC', size: 0.45 },
+  label: { text: 'FREETOWN', size: 0.45 },
 };
 
 function Plane() {
@@ -44,7 +44,7 @@ function Helipad() {
   );
 }
 
-export default function IkoyiZone() {
+export default function FreetownZone() {
   return (
     <>
       <Plane />

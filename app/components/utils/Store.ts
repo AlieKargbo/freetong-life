@@ -12,8 +12,40 @@ import { CAREER_JOBS, INITIAL_CAREER_PROGRESS, getCareerShiftPay, isCareerJobId,
 
 // Shared currency prefix for Sierra Leonean leones.
 export const CURRENCY = 'SLE';
-export const AUTH_STORAGE_KEY = 'lagos-life-authenticated';
+export const AUTH_STORAGE_KEY = 'freetown-life-authenticated';
 export const PLAYER_USERNAME_STORAGE_KEY = 'freetown-life-player-username';
+export const WELCOME_TOUR_PENDING_KEY = 'freetown-life-welcome-tour-pending';
+export const WELCOME_TOUR_COMPLETED_KEY = 'freetown-life-welcome-tour-completed';
+
+const LEGACY_STORAGE_KEYS: Record<string, string> = {
+  [AUTH_STORAGE_KEY]: 'lagos-life-authenticated',
+  [WELCOME_TOUR_PENDING_KEY]: 'lagos-life-welcome-tour-pending',
+  [WELCOME_TOUR_COMPLETED_KEY]: 'lagos-life-welcome-tour-completed',
+};
+
+export function getMigratedLocalStorage(key: string) {
+  const value = localStorage.getItem(key);
+  const legacyKey = LEGACY_STORAGE_KEYS[key];
+  if (!legacyKey) return value;
+
+  if (value !== null) {
+    localStorage.removeItem(legacyKey);
+    return value;
+  }
+
+  const legacyValue = localStorage.getItem(legacyKey);
+  if (legacyValue !== null) {
+    localStorage.setItem(key, legacyValue);
+    localStorage.removeItem(legacyKey);
+  }
+  return legacyValue;
+}
+
+export function removeMigratedLocalStorage(key: string) {
+  localStorage.removeItem(key);
+  const legacyKey = LEGACY_STORAGE_KEYS[key];
+  if (legacyKey) localStorage.removeItem(legacyKey);
+}
 
 export type MultiplayerPlayer = {
   id: string;

@@ -23,7 +23,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "lagos-life-db",
+      "database_name": "freetong-life",
       "database_id": "4d78e891-3d14-4751-a63b-ed2794de2d70",
       "migrations_dir": "migrations"
     }

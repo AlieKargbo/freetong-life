@@ -30,7 +30,15 @@ import Hud from './Hud';
 import InteriorScene from './utils/InteriorScene';
 import BuildingPopup from './utils/BuildingPopup';
 //import InteriorHud from './utils/InteriorHud';
-import { AUTH_STORAGE_KEY, game, useGame } from './utils/Store';
+import {
+    AUTH_STORAGE_KEY,
+    WELCOME_TOUR_COMPLETED_KEY,
+    WELCOME_TOUR_PENDING_KEY,
+    game,
+    getMigratedLocalStorage,
+    removeMigratedLocalStorage,
+    useGame,
+} from './utils/Store';
 import NeedSimulation from './utils/NeedSimulation';
 import GamePersistence from './utils/GamePersistence';
 import useGameClock from './utils/useGameClock';
@@ -53,7 +61,7 @@ import WelcomeTour from './zoned/Interior/WelcomeTour';
 //     TARGET[2] + DISTANCE * Math.sin(TILT),
 // ];
 
-// Settings extracted directly from lagoslife:
+// Default settings for the Freetown Life world:
 // Camera position: [3.75, 37.5, 26.25], FOV: 38, Near: 1, Far: 700
 const CAMERA_POSITION: [number, number, number] = [3.75, 37.5, 26.25];
 const TARGET: [number, number, number] = [3.75, 0, 0];
@@ -377,7 +385,7 @@ export default function WorldCanvas() {
 
     useEffect(() => {
         try {
-            const isAuthenticated = localStorage.getItem(AUTH_STORAGE_KEY) === 'true';
+            const isAuthenticated = getMigratedLocalStorage(AUTH_STORAGE_KEY) === 'true';
             setRequiresSaveHydration(isAuthenticated);
             game.setAuthenticated(isAuthenticated);
         } catch {
@@ -396,10 +404,10 @@ export default function WorldCanvas() {
 
         try {
             const pending =
-                localStorage.getItem('lagos-life-welcome-tour-pending') === 'true';
+                getMigratedLocalStorage(WELCOME_TOUR_PENDING_KEY) === 'true';
 
             const completed =
-                localStorage.getItem('lagos-life-welcome-tour-completed') === 'true';
+                getMigratedLocalStorage(WELCOME_TOUR_COMPLETED_KEY) === 'true';
 
             const tourIncomplete = pending && !completed;
             setShowWelcomeTour(tourIncomplete && interior?.id === 'player-home');
@@ -609,13 +617,8 @@ export default function WorldCanvas() {
                         setGameStarted(true);
 
                         try {
-                            localStorage.setItem(
-                                'lagos-life-welcome-tour-completed',
-                                'true'
-                            );
-                            localStorage.removeItem(
-                                'lagos-life-welcome-tour-pending'
-                            );
+                            localStorage.setItem(WELCOME_TOUR_COMPLETED_KEY, 'true');
+                            removeMigratedLocalStorage(WELCOME_TOUR_PENDING_KEY);
                         } catch {
                             // Storage may be unavailable.
                         }

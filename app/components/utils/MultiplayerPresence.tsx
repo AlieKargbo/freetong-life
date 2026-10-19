@@ -6,6 +6,8 @@ import {
   AUTH_STORAGE_KEY,
   PLAYER_USERNAME_STORAGE_KEY,
   game,
+  getMigratedLocalStorage,
+  removeMigratedLocalStorage,
   useGame,
   type MultiplayerPlayer,
 } from './Store';
@@ -99,7 +101,7 @@ export default function MultiplayerPresence() {
   useEffect(() => {
     const timer = window.setTimeout(() => { void (async () => {
       try {
-        const wasAuthenticated = localStorage.getItem(AUTH_STORAGE_KEY) === 'true';
+        const wasAuthenticated = getMigratedLocalStorage(AUTH_STORAGE_KEY) === 'true';
         let sessionUsername: string | null = null;
         if (wasAuthenticated) {
           const response = await fetch('/api/auth', { cache: 'no-store' });
@@ -107,7 +109,7 @@ export default function MultiplayerPresence() {
           if (response.ok && session.authenticated && typeof session.username === 'string') {
             sessionUsername = session.username;
           } else {
-            localStorage.removeItem(AUTH_STORAGE_KEY);
+            removeMigratedLocalStorage(AUTH_STORAGE_KEY);
           }
         }
         game.setAuthenticated(Boolean(sessionUsername));

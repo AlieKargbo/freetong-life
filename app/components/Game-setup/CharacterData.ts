@@ -104,14 +104,8 @@ export const PERSONALITY_TRAITS: Trait[] = [
 ];
 
 export const DREAMS: Dream[] = [
-    // { name: 'Oga at the Top', emoji: '👔', description: 'Reach the top level of any career.' },
-    // { name: 'Lekki Landlord', emoji: '🏡', description: 'Build a net worth of ₦1,000,000.' },
-    // { name: 'Afrobeats Star', emoji: '🎤', description: 'Max out the Music skill (level 10).' },
-    // { name: "Everybody's Padi", emoji: '🤝', description: 'Become best friends with four people.' },
-    // { name: 'Yaba Unicorn', emoji: '🦄', description: 'Get your startup funded at CcHub, Yaba.' },
-
     { name: 'Big Arlehjor', emoji: '👔', description: 'Reach the top level of any career.' },
-    { name: 'Freetong Landlord', emoji: '🏡', description: 'Build a net worth of SLE1,000,000.' },
+    { name: 'Freetong Landlord', emoji: '🏡', description: 'Build a net worth of SLE 1,000,000.' },
     { name: 'Kriofusion Star', emoji: '🎤', description: 'Max out the Music skill (level 10).' },
     { name: "All Man Sabi Mi", emoji: '🤝', description: 'Become best friends with four people.' },
     { name: 'Tech Unicorn', emoji: '🦄', description: 'Get your startup funded at Christex, FBC.' },
@@ -127,7 +121,7 @@ export const BIRTH_OUTCOMES: BirthOutcome[] = [
             'Fully furnished Hill Station flat — Daddy pays the rent',
             'Your own car (just buy fuel)',
             "Branch Manager at Daddy's friend's bank, from day one",
-            'SLE500,000 pocket money',
+            'SLE 500,000 pocket money',
         ],
     },
     {
@@ -135,10 +129,10 @@ export const BIRTH_OUTCOMES: BirthOutcome[] = [
         emoji: '🏦',
         tagline: 'Self-made hits different.',
         benefits: [
-            'SLE60,000 LAPO loan to start — repay SLE12,000 every week',
+            'SLE 60,000 LAPO loan to start — repay SLE 12,000 every week',
             'Hustle skill starts at 2',
             'You learn every skill 25% faster',
-            'Start in Malam or Congo Cross and work your way to Lekki',
+            'Start in Malam or Congo Cross and work your way to Hill Station',
         ],
     },
 ];

@@ -41,7 +41,7 @@ export type WorldSettings = {
 };
 
 export const DEFAULT_WORLD_SETTINGS: WorldSettings = {
-  name: "Lagos Life",
+  name: "Freetown Life",
   backgroundColor: "#5aa5cf",
   oceanColor: "#5aa5cf",
   oceanSize: 400,

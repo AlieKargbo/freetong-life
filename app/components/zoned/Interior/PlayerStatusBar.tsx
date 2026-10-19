@@ -250,7 +250,7 @@ export default function PlayerStatusBar({
                   Daily gem hunt
                 </span>
                 <span className="block text-xs text-slate-500">
-                  Find gems · Next prize ₦3,000
+                  Find gems · Next prize SLE 3,000
                 </span>
               </span>
             </button>
@@ -389,7 +389,7 @@ export default function PlayerStatusBar({
               className="pointer-events-auto absolute right-4 top-16 z-[60] w-64 rounded-2xl bg-white p-4 shadow-2xl"
             >
               <h3 className="mb-3 text-lg font-bold text-slate-900">
-                Lagos Life
+                Freetown Life
               </h3>
 
               {[
@@ -706,7 +706,7 @@ export default function PlayerStatusBar({
                     <div className="rounded-2xl bg-amber-50 p-4">
                       <p className="text-xs font-bold uppercase tracking-wide text-amber-700">First day in Freetown</p>
                       <h3 className="mt-1 text-xl font-extrabold text-slate-900">{firstDayComplete ? 'You’re settled in!' : 'Build your new life'}</h3>
-                      <p className="mt-1 text-sm text-slate-600">{firstDayComplete ? 'Your first day is complete. You earned a SLE5,000 welcome bonus.' : !hasCafeJob ? 'Accept the Ice Cream Cafe crew job to get started.' : shiftsCompleted === 0 ? 'Travel to Ice Cream Cafe in Lumley and complete your first shift.' : 'Buy one item to finish your first day and collect a SLE5,000 welcome bonus.'}</p>
+                      <p className="mt-1 text-sm text-slate-600">{firstDayComplete ? 'Your first day is complete. You earned a SLE 5,000 welcome bonus.' : !hasCafeJob ? 'Accept the Ice Cream Cafe crew job to get started.' : shiftsCompleted === 0 ? 'Travel to Ice Cream Cafe in Lumley and complete your first shift.' : 'Buy one item to finish your first day and collect a SLE 5,000 welcome bonus.'}</p>
                     </div>
                     <ol className="space-y-2 text-sm">
                       {firstDayGoals.map(({ label, done }) => (
@@ -724,7 +724,7 @@ export default function PlayerStatusBar({
                       <button type="button" onClick={() => onOpenTab ? onOpenTab('Buy') : setActiveTab('Buy')} className="w-full rounded-full bg-emerald-500 px-5 py-3 font-bold text-white">Open the shop</button>
                     ) : null}
                     <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4">
-                      <p className="text-xs font-bold uppercase tracking-wide text-violet-700">Skill goal · SLE5,000 reward</p>
+                      <p className="text-xs font-bold uppercase tracking-wide text-violet-700">Skill goal · SLE 5,000 reward</p>
                       <h3 className="mt-1 font-extrabold text-slate-900">Reach level 2 in any skill</h3>
                       <p className="mt-1 text-sm text-slate-600">{skillGoalRewarded ? 'Complete — your reward has been added to your wallet.' : 'Build skills by finishing activities and cafe shift tasks.'}</p>
                       {!skillGoalRewarded && <button type="button" onClick={() => onOpenTab ? onOpenTab('Skills') : setActiveTab('Skills')} className="mt-3 rounded-full bg-violet-600 px-4 py-2 text-sm font-bold text-white">View skills</button>}
