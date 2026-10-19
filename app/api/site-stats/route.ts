@@ -30,18 +30,27 @@ async function getVercelPageviews() {
 
   const endpoint = new URL('https://api.vercel.com/v1/query/web-analytics/visits/count');
   endpoint.searchParams.set('projectId', projectId);
-  if (process.env.VERCEL_TEAM_ID) endpoint.searchParams.set('teamId', process.env.VERCEL_TEAM_ID);
+  // Vercel supplies VERCEL_ORG_ID in its deployment environment. Keep the
+  // explicit variable for non-Vercel hosts (for example, a Cloudflare Worker).
+  const teamId = process.env.VERCEL_TEAM_ID || process.env.VERCEL_ORG_ID;
+  if (teamId) endpoint.searchParams.set('teamId', teamId);
 
   try {
     const response = await fetch(endpoint, {
       headers: { Authorization: `Bearer ${token}` },
       next: { revalidate: 60 },
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.error(`Vercel Web Analytics request failed (${response.status}).`);
+      return null;
+    }
     const result = await response.json() as VercelAnalyticsResponse;
     const pageviews = result.data?.pageviews;
-    return Number.isSafeInteger(pageviews) && Number(pageviews) >= 0 ? Number(pageviews) : null;
-  } catch {
+    if (Number.isSafeInteger(pageviews) && Number(pageviews) >= 0) return Number(pageviews);
+    console.error('Vercel Web Analytics returned no valid pageview count.');
+    return null;
+  } catch (error) {
+    console.error('Vercel Web Analytics request could not be completed.', error);
     return null;
   }
 }
