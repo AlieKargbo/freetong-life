@@ -109,7 +109,7 @@ export const DREAMS: Dream[] = [
     { name: 'Kriofusion Star', emoji: '🎤', description: 'Max out the Music skill (level 10).' },
     { name: "All Man Sabi Mi", emoji: '🤝', description: 'Become best friends with four people.' },
     { name: 'Tech Unicorn', emoji: '🦄', description: 'Get your startup funded at Christex, FBC.' },
-    { name: 'Alaki', emoji: '💼', description: 'Unserious about life.' }
+    { name: 'Alaki', emoji: '🙃', description: 'Unserious about life.' }
 ];
 
 export const BIRTH_OUTCOMES: BirthOutcome[] = [
