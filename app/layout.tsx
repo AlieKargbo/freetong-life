@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import MultiplayerPresence from "./components/utils/MultiplayerPresence";
+import ServiceWorkerRegistration from "./components/utils/ServiceWorkerRegistration";
 import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
@@ -16,15 +17,21 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   applicationName: "Freetown Life",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Freetown Life",
+    statusBarStyle: "default",
+  },
   title: {
     default: "Freetown Life",
     template: "%s | Freetown Life",
   },
   description: "Create a character, find work, manage everyday needs, and build your story in a shared 3D Freetown.",
   icons: {
-    icon: [{ url: "/favicon.png", type: "image/png" }],
-    shortcut: ["/favicon.png"],
-    apple: [{ url: "/favicon.png", type: "image/png" }],
+    icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+    shortcut: ["/icon-192.png"],
+    apple: [{ url: "/apple-icon.png", type: "image/png" }],
   },
   openGraph: {
     type: "website",
@@ -46,6 +53,10 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#05704f",
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -53,6 +64,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <ServiceWorkerRegistration />
         <MultiplayerPresence />
         {children}
         <Analytics />
